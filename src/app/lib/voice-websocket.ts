@@ -60,7 +60,9 @@ export class VoiceWebSocket {
       this.reconnectAttempts++;
       console.log(`Reconnecting... Attempt ${this.reconnectAttempts}`);
       setTimeout(() => {
-        this.connect();
+        this.connect().catch((err) => {
+          console.error('Reconnect failed:', err);
+        });
       }, this.reconnectDelay * this.reconnectAttempts);
     }
   }

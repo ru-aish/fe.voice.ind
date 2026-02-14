@@ -212,8 +212,13 @@ export class GdmLiveAudioVisuals3D extends LitElement {
     }
     this.animationFrameId = requestAnimationFrame(() => this.animation());
 
-    this.inputAnalyser.update();
-    this.outputAnalyser.update();
+    // Guard against uninitialized analysers
+    if (this.inputAnalyser) {
+      this.inputAnalyser.update();
+    }
+    if (this.outputAnalyser) {
+      this.outputAnalyser.update();
+    }
 
     const t = performance.now();
     const dt = (t - this.prevTime) / (1000 / 60);

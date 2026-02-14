@@ -23,9 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <Script src="/config.js" strategy="beforeInteractive" />
-      </head>
+      <Script src="/config.js" strategy="beforeInteractive" />
       <body style={{
         margin: 0,
         padding: 0,

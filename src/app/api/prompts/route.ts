@@ -7,14 +7,30 @@ export async function GET() {
     const promptsDir = path.join(process.cwd(), 'prompts');
     
     if (!fs.existsSync(promptsDir)) {
-      return NextResponse.json({ prompts: [
-        {
-          id: 'default',
-          title: 'Default Assistant',
-          filename: 'default.md',
-          content: 'You are a helpful voice assistant. Respond concisely and naturally in the language the user speaks to you.',
-        }
-      ]});
+      // Try to read default.md from project root if prompts dir doesn't exist
+      const defaultPath = path.join(process.cwd(), 'prompts', 'default.md');
+      try {
+        const content = fs.readFileSync(defaultPath, 'utf-8');
+        const titleMatch = content.match(/^#\s+(.+)$/m);
+        return NextResponse.json({ prompts: [
+          {
+            id: 'default',
+            title: titleMatch ? titleMatch[1] : 'Default Assistant',
+            filename: 'default.md',
+            content: content,
+          }
+        ]});
+      } catch {
+        // Fallback if file read fails
+        return NextResponse.json({ prompts: [
+          {
+            id: 'default',
+            title: 'Default Assistant',
+            filename: 'default.md',
+            content: 'You are a helpful voice assistant. Respond concisely and naturally.',
+          }
+        ]});
+      }
     }
 
     const files = fs.readdirSync(promptsDir);
