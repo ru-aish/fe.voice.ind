@@ -2,6 +2,13 @@ import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 
+const DEFAULT_PROMPT = {
+  id: 'default',
+  title: 'Default Assistant',
+  filename: 'default.md',
+  content: 'You are a helpful voice assistant. Respond concisely and naturally.',
+};
+
 export async function GET() {
   try {
     const promptsDir = path.join(process.cwd(), 'prompts');
@@ -11,18 +18,11 @@ export async function GET() {
 
     if (mdFiles.length === 0) {
       return NextResponse.json({
-        prompts: [
-          {
-            id: 'default',
-            title: 'Default Assistant',
-            filename: 'default.md',
-            content: 'You are a helpful voice assistant. Respond concisely and naturally.',
-          },
-        ],
+        prompts: [DEFAULT_PROMPT],
       });
     }
 
-    const prompts = await Promise.all(
+    const results = await Promise.allSettled(
       mdFiles.map(async (file) => {
         const filePath = path.join(promptsDir, file);
         const content = await fs.readFile(filePath, 'utf-8');
@@ -36,6 +36,24 @@ export async function GET() {
         };
       })
     );
+
+    const prompts = results
+      .filter((result): result is PromiseFulfilledResult<{ id: string; title: string; filename: string; content: string }> => result.status === 'fulfilled')
+      .map(result => result.value);
+
+    const errors = results
+      .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
+      .map(result => result.reason);
+
+    if (errors.length > 0) {
+      console.warn('Failed to read some prompt files:', errors);
+    }
+
+    if (prompts.length === 0 && errors.length > 0) {
+      return NextResponse.json({
+        prompts: [DEFAULT_PROMPT],
+      });
+    }
 
     return NextResponse.json({ prompts });
   } catch (error) {

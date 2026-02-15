@@ -54,36 +54,34 @@
   border-radius: 50%;
   z-index: 10001;
 }
+/* Accessibility: Only hide native cursor when pointer is fine AND user has no reduced motion/contrast preferences */
 @media (pointer: fine) {
-  .page.useCustomCursor { cursor: none; }
-  .page.useCustomCursor * { cursor: none; }
-  .page.useCustomCursor .cursorDot {
+  .page.hideCursor { cursor: none; }
+  .page.hideCursor * { cursor: none; }
+  .cursorDot {
     display: block; width: 8px; height: 8px;
     background-color: var(--accent);
     z-index: 10001;
     transition: width 0.2s, height 0.2s, background-color 0.2s;
   }
-  .page.useCustomCursor .cursorOutline {
+  .cursorOutline {
     display: block; width: 40px; height: 40px;
     border: 1px solid var(--accent);
     z-index: 10000;
     transition: transform 0.1s ease-out, width 0.2s, height 0.2s, background-color 0.2s, border-color 0.2s;
   }
 }
-@media (pointer: fine) and (prefers-reduced-motion: reduce) {
-  .page.useCustomCursor,
-  .page.useCustomCursor * { cursor: auto; }
-  .page.useCustomCursor .cursorDot,
-  .page.useCustomCursor .cursorOutline { display: none; }
+
+/* Accessibility: Respect reduced motion and high contrast preferences - show native cursor */
+@media (prefers-reduced-motion: reduce), (prefers-contrast: more) {
+  .page { cursor: auto; }
+  .page * { cursor: auto; }
+  .cursorDot, .cursorOutline {
+    display: none !important;
+  }
 }
-@media (pointer: fine) and (forced-colors: active) {
-  .page.useCustomCursor,
-  .page.useCustomCursor * { cursor: auto; }
-  .page.useCustomCursor .cursorDot,
-  .page.useCustomCursor .cursorOutline { display: none; }
-}
-.page.useCustomCursor .cursorHover .cursorDot { width: 4px; height: 4px; background-color: var(--bg-base); }
-.page.useCustomCursor .cursorHover .cursorOutline {
+.cursorHover .cursorDot { width: 4px; height: 4px; background-color: var(--bg-base); }
+.cursorHover .cursorOutline {
   width: 45px; height: 45px;
   background-color: var(--accent);
   mix-blend-mode: difference;
@@ -96,9 +94,9 @@
 
 /* === CONTAINER === */
 .container {
-  max-width: min(1600px, 95%);
+  max-width: min(1400px, 100%);
   margin: 0 auto;
-  padding: 0 clamp(1rem, 2vw, 3rem);
+  padding: 0 clamp(0.75rem, 4vw, 4rem);
   width: 100%;
   box-sizing: border-box;
 }
@@ -206,17 +204,137 @@
 
 
 /* ============================================================
-   HERO (Moved to Component)
+   HERO
    ============================================================ */
-/* Styles moved to src/app/components/landing/Hero/Hero.module.css */
+.hero {
+  padding: clamp(2rem, 8vh, 8rem) 0 clamp(2rem, 6vh, 6rem);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(1.5rem, 4vw, 5rem);
+  align-items: center;
+  min-height: auto;
+}
+.heroLabel {
+  display: inline-block;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 0.4rem 1rem;
+  border-radius: 50px;
+  margin-bottom: 2rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  font-size: clamp(0.7rem, 1.5vw, 0.8rem);
+  letter-spacing: 0.05em;
+}
+.heroTitle {
+  font-family: var(--font-display);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  font-size: clamp(1.75rem, 7vw, 5rem);
+  margin-bottom: 1.5rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+.heroSubtitle {
+  font-size: clamp(0.9rem, 1.2vw, 1.1rem);
+  color: var(--text-muted);
+  max-width: 90%;
+  margin-bottom: clamp(1.5rem, 3vw, 2rem);
+  line-height: 1.6;
+}
+.heroBullets {
+  display: flex; flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin-bottom: 2rem;
+}
+.bulletItem {
+  display: flex; align-items: center;
+  gap: 0.5rem;
+  font-size: clamp(0.85rem, 1.5vw, 0.95rem);
+  color: var(--text-muted);
+}
+.bulletCheck { color: var(--accent); font-weight: 700; font-size: 1.1em; }
+.heroBtns {
+  display: flex; 
+  gap: 0.75rem; 
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.heroBtns .btn,
+.heroBtns .btnPrimary { 
+  flex: 1 1 auto; 
+  min-width: 140px;
+}
 
+/* Trust row */
+.trustRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+}
+.trustItem {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.trustItem svg { color: rgba(204, 255, 0, 0.5); }
 
 
 /* ============================================================
-   VOICE WAVE VISUALIZER (Moved to Component)
+   VOICE WAVE VISUALIZER (Canvas - Redesigned)
    ============================================================ */
-/* Styles moved to src/app/components/landing/WaveVisualizer/WaveVisualizer.module.css */
-
+.waveContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: clamp(220px, 45vw, 420px);
+  min-height: 220px;
+  width: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: clamp(12px, 3vw, 20px);
+  position: relative;
+  overflow: hidden;
+}
+.waveCanvas {
+  width: 100%; height: 100%;
+  display: block;
+}
+.waveLabel {
+  position: absolute;
+  bottom: clamp(14px, 2.5vw, 26px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: clamp(0.6rem, 1vw, 0.75rem);
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.waveLabelDot {
+  width: 6px; height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: inline-block;
+  animation: waveDotPulse 2s ease-in-out infinite;
+}
+@keyframes waveDotPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(204,255,0,0.5); }
+  50% { opacity: 0.4; box-shadow: 0 0 2px rgba(204,255,0,0.2); }
+}
 
 
 /* ============================================================
@@ -228,20 +346,9 @@
 }
 .problemGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: clamp(2rem, 5vw, 5rem);
-  align-items: stretch;
-}
-
-.problemContent {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  height: 100%;
-}
-
-.calcColumn {
-  height: 100%;
+  grid-template-columns: 1fr 1.2fr;
+  gap: clamp(2rem, 6vw, 6rem);
+  align-items: start;
 }
 .columnLabel {
   font-family: var(--font-mono);
@@ -392,10 +499,6 @@
   padding: clamp(2rem, 5vw, 3rem);
   border: 1px solid var(--border-subtle);
   border-radius: 24px;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
 }
 .calcBoxTitle {
   font-family: var(--font-display);
@@ -467,40 +570,6 @@
   color: var(--accent);
   line-height: 1;
   white-space: nowrap;
-}
-
-/* Calculator Insight Box */
-.calcInsightBox {
-  margin: 1.5rem 0;
-  padding: 1.25rem 1.5rem;
-  background: rgba(204, 255, 0, 0.08);
-  border: 1px solid rgba(204, 255, 0, 0.2);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.calcInsightIcon {
-  width: 32px;
-  height: 32px;
-  background: var(--accent);
-  color: var(--bg-base);
-  border-radius: 50%;
-  font-family: var(--font-mono);
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-  flex-shrink: 0;
-}
-
-.calcInsightText {
-  color: var(--text-main);
-  font-size: clamp(0.95rem, 1.5vw, 1.05rem);
-  margin: 0;
-  line-height: 1.4;
 }
 
 /* Hidden Costs Grid */
@@ -871,7 +940,7 @@
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: 24px;
-  padding: clamp(4rem, 8vw, 6rem) clamp(2rem, 5vw, 4rem);
+  padding: clamp(3rem, 6vw, 5rem) clamp(2rem, 5vw, 4rem);
   max-width: 640px;
   margin: 0 auto;
   text-align: center;
@@ -903,8 +972,7 @@
   justify-content: center;
   gap: 0.75rem;
   margin-bottom: 1.5rem;
-  flex-wrap: nowrap;
-  white-space: nowrap;
+  flex-wrap: wrap;
 }
 .pricingValue {
   font-family: var(--font-display);
@@ -1388,6 +1456,35 @@
 
 /* Tablet and below */
 @media (max-width: 1100px) {
+  .hero {
+    grid-template-columns: 1fr;
+    text-align: center;
+    padding: clamp(2rem, 8vh, 6rem) 0;
+    gap: 2rem;
+  }
+  .heroSubtitle { 
+    margin-left: auto; 
+    margin-right: auto; 
+    max-width: 600px;
+    font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+  }
+  .heroBullets { 
+    justify-content: center; 
+    gap: 0.75rem 1.25rem;
+  }
+  .heroBtns { 
+    justify-content: center;
+    gap: 0.75rem;
+  }
+  .heroBtns .btn,
+  .heroBtns .btnPrimary { 
+    flex: 0 1 auto;
+    min-width: 160px;
+  }
+  .trustRow { 
+    justify-content: center; 
+    gap: 0.75rem 1.25rem;
+  }
   .problemGrid { 
     grid-template-columns: 1fr; 
     gap: 2.5rem;
@@ -1431,12 +1528,44 @@
     grid-template-columns: repeat(3, 1fr); 
     gap: 0.5rem;
   }
+  .waveContainer {
+    height: clamp(200px, 40vw, 350px);
+    min-height: 200px;
+  }
 }
 
 /* Mobile landscape and below */
 @media (max-width: 768px) {
   .page {
     --section-pad: clamp(2rem, 5vh, 4rem);
+  }
+  
+  .hero {
+    padding: clamp(1.5rem, 6vh, 4rem) 0;
+    gap: 1.5rem;
+  }
+  
+  .heroTitle {
+    font-size: clamp(1.5rem, 8vw, 2.5rem);
+    margin-bottom: 1rem;
+  }
+  
+  .heroLabel {
+    margin-bottom: 1rem;
+    padding: 0.3rem 0.8rem;
+    font-size: clamp(0.65rem, 2vw, 0.75rem);
+  }
+  
+  .heroBtns {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .heroBtns .btn,
+  .heroBtns .btnPrimary {
+    width: 100%;
+    flex: 1 1 100%;
+    min-width: unset;
   }
   
   .contactForm { 
@@ -1545,8 +1674,7 @@
   .pricingRange { 
     flex-direction: row; 
     gap: 0.5rem;
-    flex-wrap: nowrap;
-    white-space: nowrap;
+    flex-wrap: wrap;
   }
   
   .pricingValue {

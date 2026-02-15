@@ -27,61 +27,108 @@ import { useEffect, useRef, useCallback } from 'react';
 const TRACKING_ENDPOINT = '/api/tracking/event';
 const BATCH_INTERVAL = 3000;  // Send batched actions every 3 seconds
 const DEBUG = process.env.NODE_ENV === 'development';
+const MAX_QUEUE_SIZE = 500;
+const MAX_RETRY_ATTEMPTS = 3;
+const MAX_RETRY_DELAY_MS = 30000;
 
 // Action queue for batching
 interface QueuedAction {
     action: string;      // Action code (e.g., 'mic_start')
     t_ms: number;        // Milliseconds since session start
     extra?: string;      // Optional extra data
+    retryCount?: number; // Retry attempts for failed sends
 }
 
-let actionQueue: QueuedAction[] = [];
+// Global session start time - set once per module load, persists across Strict Mode re-renders
+// This is intentional: we want a single session start time even in Strict Mode
+const globalSessionStartTime = Date.now();
+let globalSessionStartSent = false;
 
-// Session start time (milliseconds)
-let sessionStartTime: number = 0;
+// Shared queue for external trackAction() calls outside the Tracker component tree
+const externalActionQueue: QueuedAction[] = [];
+let externalFlushTimeout: ReturnType<typeof setTimeout> | null = null;
+let isExternalFlushing = false;
+let externalPagehideListenerAttached = false;
+let externalRetryDelayMs = BATCH_INTERVAL;
 
-// Track if session_start has been sent
-let sessionStartSent = false;
+function toTransportActions(actions: QueuedAction[]) {
+    return actions.map(({ action, t_ms, extra }) => ({ action, t_ms, extra }));
+}
 
-/**
- * Get current timestamp in milliseconds since session start
- */
-function getTimestamp(): number {
-    if (!sessionStartTime) {
-        sessionStartTime = Date.now();
+function trimQueue(queue: QueuedAction[], queueName: string): void {
+    if (queue.length <= MAX_QUEUE_SIZE) return;
+
+    const droppedCount = queue.length - MAX_QUEUE_SIZE;
+    queue.splice(0, droppedCount);
+
+    if (DEBUG) {
+        console.warn(`[Tracker] Dropped ${droppedCount} oldest ${queueName} actions (queue limit ${MAX_QUEUE_SIZE})`);
     }
-    return Date.now() - sessionStartTime;
 }
 
-/**
- * Send actions to tracking API
- */
-async function sendActions(actions: QueuedAction[]): Promise<boolean> {
-    if (actions.length === 0) return true;
+function enqueueWithLimit(queue: QueuedAction[], action: QueuedAction, queueName: string): void {
+    queue.push(action);
+    trimQueue(queue, queueName);
+}
+
+function requeueFailedWithLimit(queue: QueuedAction[], failedActions: QueuedAction[], queueName: string): void {
+    const retryable = failedActions
+        .map((action) => ({ ...action, retryCount: (action.retryCount ?? 0) + 1 }))
+        .filter((action) => action.retryCount <= MAX_RETRY_ATTEMPTS);
+
+    const droppedForRetries = failedActions.length - retryable.length;
+    if (droppedForRetries > 0 && DEBUG) {
+        console.warn(`[Tracker] Dropped ${droppedForRetries} ${queueName} actions after max retries`);
+    }
+
+    queue.unshift(...retryable);
+    trimQueue(queue, queueName);
+}
+
+async function flushExternalQueue(): Promise<void> {
+    if (isExternalFlushing) return;
+    if (externalActionQueue.length === 0) return;
+
+    isExternalFlushing = true;
+    const actionsToSend = externalActionQueue.splice(0, externalActionQueue.length);
 
     try {
-        const response = await fetch(TRACKING_ENDPOINT, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ actions }),
-            credentials: 'include'  // Include session cookies
-        });
-
-        if (!response.ok) {
-            if (DEBUG) console.warn('[Tracker] API error:', response.status);
-            return false;
+        const success = await sendActionsWithFetch(actionsToSend);
+        if (!success) {
+            requeueFailedWithLimit(externalActionQueue, actionsToSend, 'external');
+            externalRetryDelayMs = Math.min(externalRetryDelayMs * 2, MAX_RETRY_DELAY_MS);
+            scheduleExternalFlush(externalRetryDelayMs);
+            return;
         }
 
-        if (DEBUG) {
-            console.log('[Tracker] Sent actions:', actions.map(a => 
-                `${formatTime(a.t_ms)} ${a.action}${a.extra ? ` (${a.extra})` : ''}`
-            ));
+        externalRetryDelayMs = BATCH_INTERVAL;
+        if (externalActionQueue.length > 0) {
+            scheduleExternalFlush(BATCH_INTERVAL);
         }
-        return true;
-    } catch (error) {
-        if (DEBUG) console.warn('[Tracker] Send failed:', error);
-        return false;
+    } finally {
+        isExternalFlushing = false;
     }
+}
+
+function scheduleExternalFlush(delayMs = BATCH_INTERVAL): void {
+    if (externalFlushTimeout) return;
+    externalFlushTimeout = setTimeout(async () => {
+        externalFlushTimeout = null;
+        await flushExternalQueue();
+    }, delayMs);
+}
+
+function attachExternalPagehideFlush(): void {
+    if (externalPagehideListenerAttached || typeof window === 'undefined') return;
+
+    window.addEventListener('pagehide', () => {
+        if (externalActionQueue.length > 0) {
+            sendActionsWithBeacon(externalActionQueue);
+            externalActionQueue.length = 0;
+        }
+    });
+
+    externalPagehideListenerAttached = true;
 }
 
 /**
@@ -96,64 +143,131 @@ function formatTime(ms: number): string {
 }
 
 /**
- * Queue an action for sending
+ * Send actions to tracking API using fetch (for regular batch sends)
  */
-function queueAction(action: string, extra?: string) {
-    const t_ms = getTimestamp();
-    
-    actionQueue.push({
-        action,
-        t_ms,
-        extra
-    });
+async function sendActionsWithFetch(actions: QueuedAction[]): Promise<boolean> {
+    if (actions.length === 0) return true;
 
-    if (DEBUG) {
-        console.log(`[Tracker] ${formatTime(t_ms)} ${action}${extra ? ` (${extra})` : ''}`);
+    try {
+        const response = await fetch(TRACKING_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actions: toTransportActions(actions) }),
+            credentials: 'include'  // Include session cookies
+        });
+
+        if (!response.ok) {
+            if (DEBUG) console.warn('[Tracker] API error:', response.status);
+            return false;
+        }
+
+        if (DEBUG) {
+            console.log('[Tracker] Sent actions:', actions.map(a =>
+                `${formatTime(a.t_ms)} ${a.action}${a.extra ? ` (${a.extra})` : ''}`
+            ));
+        }
+        return true;
+    } catch (error) {
+        if (DEBUG) console.warn('[Tracker] Send failed:', error);
+        return false;
     }
 }
 
 /**
- * Send an action immediately (for critical actions like form submit)
+ * Send actions using sendBeacon with proper Content-Type header
+ * Used for page unload and cleanup scenarios where fetch might be cancelled
  */
-async function sendActionNow(action: string, extra?: string) {
-    const t_ms = getTimestamp();
+function sendActionsWithBeacon(actions: QueuedAction[]): boolean {
+    if (actions.length === 0) return true;
     
-    if (DEBUG) {
-        console.log(`[Tracker] ${formatTime(t_ms)} ${action}${extra ? ` (${extra})` : ''} [immediate]`);
+    if (!navigator.sendBeacon) {
+        if (DEBUG) console.warn('[Tracker] sendBeacon not available');
+        return false;
+    }
+
+    // Use Blob with explicit Content-Type for proper server parsing
+    const blob = new Blob(
+        [JSON.stringify({ actions: toTransportActions(actions) })],
+        { type: 'application/json' }
+    );
+    
+    const sent = navigator.sendBeacon(TRACKING_ENDPOINT, blob);
+    
+    if (DEBUG && sent) {
+        console.log('[Tracker] Sent via beacon:', actions.map(a =>
+            `${formatTime(a.t_ms)} ${a.action}${a.extra ? ` (${a.extra})` : ''}`
+        ));
     }
     
-    await sendActions([{ action, t_ms, extra }]);
+    return sent;
 }
 
 /**
  * Tracker Component
  */
 export function Tracker() {
+    // All state moved to refs to survive Strict Mode re-renders
+    const actionQueueRef = useRef<QueuedAction[]>([]);
+    const isFlushingRef = useRef(false);
     const batchIntervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
+    
+    // Persistent ref for this mounted instance
+    const sessionStartSentRef = useRef(false);
 
-    // Flush action queue
+    /**
+     * Get current timestamp in milliseconds since session start
+     */
+    const getTimestamp = useCallback((): number => {
+        return Date.now() - globalSessionStartTime;
+    }, []);
+
+    /**
+     * Queue an action for sending
+     */
+    const queueAction = useCallback((action: string, extra?: string) => {
+        const t_ms = getTimestamp();
+        
+        enqueueWithLimit(actionQueueRef.current, {
+            action,
+            t_ms,
+            extra
+        }, 'internal');
+
+        if (DEBUG) {
+            console.log(`[Tracker] ${formatTime(t_ms)} ${action}${extra ? ` (${extra})` : ''}`);
+        }
+    }, [getTimestamp]);
+
+    /**
+     * Flush action queue with race condition guard
+     */
     const flushActions = useCallback(async () => {
-        if (actionQueue.length === 0) return;
+        // Guard against concurrent flush operations
+        if (isFlushingRef.current) return;
+        if (actionQueueRef.current.length === 0) return;
         
-        const actionsToSend = [...actionQueue];
-        actionQueue = [];
+        isFlushingRef.current = true;
         
-        const success = await sendActions(actionsToSend);
-        if (!success) {
-            // Re-queue failed actions
-            actionQueue = [...actionsToSend, ...actionQueue];
+        // Swap out the queue atomically
+        const actionsToSend = [...actionQueueRef.current];
+        actionQueueRef.current = [];
+        
+        try {
+            const success = await sendActionsWithFetch(actionsToSend);
+            if (!success) {
+                requeueFailedWithLimit(actionQueueRef.current, actionsToSend, 'internal');
+            }
+        } finally {
+            isFlushingRef.current = false;
         }
     }, []);
 
     useEffect(() => {
-        // Initialize session
-        sessionStartTime = Date.now();
-        sessionStartSent = false;
-
-        // Record session start
-        if (!sessionStartSent) {
+        // Record session start once per page lifecycle (including Strict Mode remounts)
+        if (!sessionStartSentRef.current && !globalSessionStartSent) {
             queueAction('session_start');
-            sessionStartSent = true;
+            sessionStartSentRef.current = true;
+            globalSessionStartSent = true;
         }
 
         // ========================================
@@ -228,17 +342,21 @@ export function Tracker() {
         };
 
         // ========================================
-        // Form Submit Tracking
+        // Form Submit Tracking - Use sendBeacon for reliability
         // ========================================
         const handleSubmit = (e: Event) => {
             const form = e.target as HTMLFormElement;
             const trackAttr = form.getAttribute('data-track');
+            const action = trackAttr || 'form_submit';
             
-            if (trackAttr) {
-                sendActionNow(trackAttr);  // Send immediately
-            } else {
-                sendActionNow('form_submit');
+            const t_ms = getTimestamp();
+            
+            if (DEBUG) {
+                console.log(`[Tracker] ${formatTime(t_ms)} ${action} [beacon - form submit]`);
             }
+            
+            // Use sendBeacon for reliable delivery during form navigation
+            sendActionsWithBeacon([{ action, t_ms }]);
         };
 
         // ========================================
@@ -304,14 +422,13 @@ export function Tracker() {
         // ========================================
         const handleBeforeUnload = () => {
             // Add session_end to queue
-            queueAction('session_end');
+            const t_ms = getTimestamp();
+            enqueueWithLimit(actionQueueRef.current, { action: 'session_end', t_ms }, 'internal');
             
-            // Use sendBeacon for reliable delivery on page exit
-            if (actionQueue.length > 0 && navigator.sendBeacon) {
-                navigator.sendBeacon(
-                    TRACKING_ENDPOINT,
-                    JSON.stringify({ actions: actionQueue })
-                );
+            // Use sendBeacon with proper Content-Type for reliable delivery on page exit
+            if (actionQueueRef.current.length > 0) {
+                sendActionsWithBeacon(actionQueueRef.current);
+                actionQueueRef.current = [];
             }
         };
 
@@ -325,7 +442,7 @@ export function Tracker() {
         window.addEventListener('beforeunload', handleBeforeUnload);
 
         // ========================================
-        // Cleanup
+        // Cleanup - Use synchronous sendBeacon
         // ========================================
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -344,10 +461,13 @@ export function Tracker() {
                 sectionObserver.disconnect();
             }
 
-            // Flush remaining actions
-            flushActions();
+            // Use synchronous sendBeacon for cleanup - async flush won't complete
+            if (actionQueueRef.current.length > 0) {
+                sendActionsWithBeacon(actionQueueRef.current);
+                actionQueueRef.current = [];
+            }
         };
-    }, [flushActions]);
+    }, [queueAction, getTimestamp, flushActions]);
 
     // This component renders nothing
     return null;
@@ -362,7 +482,16 @@ export function Tracker() {
  * trackAction('api_calendar', 'booking_request');
  */
 export function trackAction(action: string, extra?: string) {
-    queueAction(action, extra);
+    attachExternalPagehideFlush();
+
+    const t_ms = Date.now() - globalSessionStartTime;
+    
+    if (DEBUG) {
+        console.log(`[Tracker] ${formatTime(t_ms)} ${action}${extra ? ` (${extra})` : ''} [external]`);
+    }
+    
+    enqueueWithLimit(externalActionQueue, { action, t_ms, extra }, 'external');
+    scheduleExternalFlush();
 }
 
 /**
@@ -370,7 +499,13 @@ export function trackAction(action: string, extra?: string) {
  * Use for critical actions like form submissions
  */
 export function trackActionNow(action: string, extra?: string) {
-    sendActionNow(action, extra);
+    const t_ms = Date.now() - globalSessionStartTime;
+    
+    if (DEBUG) {
+        console.log(`[Tracker] ${formatTime(t_ms)} ${action}${extra ? ` (${extra})` : ''} [immediate/beacon]`);
+    }
+    
+    sendActionsWithBeacon([{ action, t_ms, extra }]);
 }
 
 // Legacy exports for backward compatibility

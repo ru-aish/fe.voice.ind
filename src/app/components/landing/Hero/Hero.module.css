@@ -1,0 +1,227 @@
+.hero {
+  /* Use min-height: 100vh for full viewport impact if desired, or auto */
+  min-height: 90vh; 
+  padding: clamp(3rem, 8vh, 8rem) 0 clamp(2rem, 6vh, 6rem);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  /* Increased gap as requested */
+  gap: clamp(2rem, 8vw, 8rem); 
+  align-items: stretch; /* Stretch columns to equal height */
+  position: relative;
+  z-index: 10;
+}
+
+/* Text Column */
+.heroContent {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+}
+
+.heroLabel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 0.4rem 1rem;
+  border-radius: 50px;
+  margin-bottom: clamp(1.5rem, 3vh, 2.5rem);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  font-size: clamp(0.7rem, 1.2vw, 0.85rem);
+  letter-spacing: 0.08em;
+  background: rgba(204, 255, 0, 0.05);
+  align-self: flex-start;
+  transition: all 0.3s ease;
+}
+
+.heroTitle {
+  font-family: var(--font-display);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  /* Fluid typography fix */
+  font-size: clamp(2rem, 6vw, 5.5rem); 
+  margin-bottom: clamp(1rem, 3vh, 2rem);
+  word-break: normal;
+  overflow-wrap: break-word; 
+  hyphens: auto;
+  max-width: 100%;
+}
+
+.textAccent {
+  color: var(--accent);
+  display: inline-block; /* Ensure transforms work if needed */
+}
+
+.heroSubtitle {
+  font-size: clamp(1rem, 1.5vw, 1.2rem);
+  color: var(--text-muted);
+  max-width: 90%;
+  margin-bottom: clamp(1.5rem, 4vh, 2.5rem);
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.heroBullets {
+  display: flex; 
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  margin-bottom: clamp(2rem, 5vh, 3rem);
+}
+
+.bulletItem {
+  display: flex; align-items: center;
+  gap: 0.6rem;
+  font-size: clamp(0.85rem, 1.1vw, 1rem);
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.bulletCheck { 
+  color: var(--accent); 
+  font-weight: 800; 
+  font-size: 1.2em; 
+}
+
+.heroBtns {
+  display: flex; 
+  gap: 1rem; 
+  flex-wrap: wrap;
+  margin-bottom: clamp(1.5rem, 4vh, 2.5rem);
+  width: 100%;
+}
+
+.btn, .btnPrimary {
+  /* Ensure buttons are touch-friendly */
+  min-height: 48px;
+  padding: 0 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btnPrimary {
+  background: var(--accent);
+  color: var(--bg-base);
+  border: 1px solid var(--accent);
+}
+
+.btnPrimary:hover {
+  background: var(--accent-hover);
+  color: var(--bg-base);
+  border-color: var(--accent-hover);
+  /* Removed transform and shadow for "normal" hover */
+}
+
+.btn {
+  background: transparent;
+  color: var(--text-main);
+  border: 1px solid var(--border-subtle);
+}
+
+.btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(204, 255, 0, 0.05);
+}
+
+/* Trust Signals */
+.trustRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  margin-top: auto; /* Push to bottom if flex column */
+}
+
+.trustItem {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.trustItem svg { 
+  color: rgba(204, 255, 0, 0.6); 
+  width: 14px; height: 14px;
+}
+
+/* Mobile Breakpoints */
+@media (max-width: 1100px) {
+  .hero {
+    grid-template-columns: 1fr; /* Stack vertically */
+    text-align: center;
+    padding: clamp(4rem, 10vh, 6rem) 0; /* Add top padding */
+    gap: 3rem;
+  }
+  
+  .heroContent {
+    align-items: center;
+  }
+  
+  .heroLabel {
+    align-self: center;
+  }
+  
+  .heroSubtitle {
+    margin-left: auto; 
+    margin-right: auto;
+    font-size: 1.1rem;
+  }
+  
+  .heroBullets {
+    justify-content: center;
+  }
+  
+  .heroBtns {
+    justify-content: center;
+  }
+  
+  .trustRow {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .heroTitle {
+    /* Significantly reduce font size for small mobile */
+    font-size: clamp(2rem, 10vw, 3rem); 
+    line-height: 1.1;
+  }
+  
+  .heroBtns {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.75rem;
+  }
+  
+  .btn, .btnPrimary {
+    width: 100%; /* Full width buttons on mobile */
+  }
+  
+  .trustRow {
+    gap: 0.75rem 1rem;
+  }
+  
+  /* Add more padding to the sides via parent container usually, but we can enforce max-width here if needed */
+  .heroContent {
+    padding: 0 0.5rem; /* Extra internal padding for safety */
+  }
+}

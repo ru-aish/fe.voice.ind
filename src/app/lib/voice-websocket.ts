@@ -29,11 +29,13 @@ export class VoiceWebSocket {
     return new Promise((resolve, reject) => {
       try {
         this.intentionalDisconnect = false;
+        let settled = false;
         this.ws = new WebSocket(this.config.url);
 
         this.ws.onopen = () => {
           console.log('WebSocket connected');
           this.reconnectAttempts = 0;
+          settled = true;
           this.config.onOpen?.();
           resolve();
         };
@@ -41,6 +43,10 @@ export class VoiceWebSocket {
         this.ws.onclose = (event) => {
           console.log('WebSocket closed');
           this.config.onClose?.(event);
+          if (!settled) {
+            reject(new Error('WebSocket closed before connection'));
+            return;
+          }
           if (this.enableReconnect && !this.intentionalDisconnect) {
             this.attemptReconnect();
           }
@@ -49,7 +55,6 @@ export class VoiceWebSocket {
         this.ws.onerror = (error) => {
           console.error('WebSocket error:', error);
           this.config.onError?.(error);
-          reject(error);
         };
 
         this.ws.onmessage = (event) => {

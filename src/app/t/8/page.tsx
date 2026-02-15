@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import s from './styles.module.css';
-import Hero from './components/landing/Hero/Hero';
 
 // ─── Data ────────────────────────────────────────────────────
 const FEATURES = [
@@ -57,7 +56,7 @@ const inrFormat = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 
 const numFormat = new Intl.NumberFormat('en-IN');
 
 // ─── Component ───────────────────────────────────────────────
-export default function HomePage() {
+export default function DorkkBrutalistPage() {
   // Scroll to top on mount
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -71,7 +70,6 @@ export default function HomePage() {
 
   // Calculator state
   const [calls, setCalls] = useState(45);
-  const [missRate, setMissRate] = useState(30);
   const [dealValue, setDealValue] = useState(2500);
 
   // FAQ state
@@ -80,98 +78,182 @@ export default function HomePage() {
   // Chain reaction state
   const [openChain, setOpenChain] = useState<number | null>(null);
 
+  // Canvas Ref
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
   // Scroll reveal
   useEffect(() => {
     const els = document.querySelectorAll(`.${s.reveal}`);
     const observer = new IntersectionObserver(
       (entries) => {
-        for (const entry of entries) {
+        entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add(s.revealActive);
             observer.unobserve(entry.target);
           }
-        }
+        });
       },
       { threshold: 0.1, rootMargin: '0px 0px -20px 0px' }
     );
-    els.forEach((el) => {
-      observer.observe(el);
-    });
+    els.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
   }, []);
 
   // Custom cursor (pointer:fine devices only)
   useEffect(() => {
-    const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!hasFinePointer || prefersReducedMotion) return;
+    if (!window.matchMedia('(pointer: fine)').matches) return;
 
     const dot = cursorDotRef.current;
     const outline = cursorOutlineRef.current;
     if (!dot || !outline) return;
 
-    let rafId = 0;
-    let targetX = 0;
-    let targetY = 0;
-    let currentX = 0;
-    let currentY = 0;
-
-    const loop = () => {
-      currentX += (targetX - currentX) * 0.18;
-      currentY += (targetY - currentY) * 0.18;
-      outline.style.left = `${currentX}px`;
-      outline.style.top = `${currentY}px`;
-      rafId = window.requestAnimationFrame(loop);
-    };
-
     const onMouseMove = (e: MouseEvent) => {
-      targetX = e.clientX;
-      targetY = e.clientY;
-      dot.style.left = `${targetX}px`;
-      dot.style.top = `${targetY}px`;
+      dot.style.left = `${e.clientX}px`;
+      dot.style.top = `${e.clientY}px`;
+      outline.animate(
+        { left: `${e.clientX}px`, top: `${e.clientY}px` },
+        { duration: 500, fill: 'forwards' }
+      );
     };
-
-    rafId = window.requestAnimationFrame(loop);
 
     window.addEventListener('mousemove', onMouseMove);
-    return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.cancelAnimationFrame(rafId);
-    };
+    return () => window.removeEventListener('mousemove', onMouseMove);
   }, []);
 
   // Hover targets for cursor
   useEffect(() => {
-    const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!hasFinePointer || prefersReducedMotion) return;
+    if (!window.matchMedia('(pointer: fine)').matches) return;
     const page = pageRef.current;
     if (!page) return;
+    const targets = page.querySelectorAll('button, a, input[type="range"], input[type="text"], input[type="email"], input[type="tel"], textarea, [data-hover]');
+    const enter = () => setCursorHover(true);
+    const leave = () => setCursorHover(false);
+    targets.forEach((t) => {
+      t.addEventListener('mouseenter', enter);
+      t.addEventListener('mouseleave', leave);
+    });
+    return () => {
+      targets.forEach((t) => {
+        t.removeEventListener('mouseenter', enter);
+        t.removeEventListener('mouseleave', leave);
+      });
+    };
+  }, []);
 
-    const selector = 'button, a, input[type="range"], input[type="text"], input[type="email"], input[type="tel"], textarea, [data-hover]';
-    const onMouseOver = (e: MouseEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (target?.closest(selector)) {
-        setCursorHover(true);
+  // ─── Canvas Visualizer Effect ─────────────────────────────────
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animationId: number;
+    let time = 0;
+    
+    const resize = () => {
+      const parent = canvas.parentElement;
+      if (parent) {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = parent.clientWidth * dpr;
+        canvas.height = parent.clientHeight * dpr;
+        canvas.style.width = `${parent.clientWidth}px`;
+        canvas.style.height = `${parent.clientHeight}px`;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       }
     };
-    const onMouseOut = (e: MouseEvent) => {
-      const related = e.relatedTarget as HTMLElement | null;
-      if (related?.closest(selector)) return;
-      setCursorHover(false);
+    window.addEventListener('resize', resize);
+    resize();
+
+    const draw = () => {
+      if (!canvas.parentElement) return;
+      const width = canvas.parentElement.clientWidth;
+      const height = canvas.parentElement.clientHeight;
+      const centerX = width / 2;
+      const centerY = height / 2;
+      
+      ctx.clearRect(0, 0, width, height);
+      
+      const bars = 72;
+      const innerRadius = Math.min(width, height) * 0.18;
+      const outerRadius = Math.min(width, height) * 0.22;
+      
+      time += 0.03;
+
+      // Outer glow ring
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, outerRadius + 5, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(204, 255, 0, 0.06)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Inner ring
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, innerRadius - 2, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(204, 255, 0, 0.08)';
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+
+      // Draw Radial Bars with smooth sine-based animation
+      for (let i = 0; i < bars; i++) {
+        const angle = (Math.PI * 2 * i) / bars;
+        
+        // Multi-layered wave simulation
+        const wave1 = Math.sin(time * 2.5 + i * 0.15) * 0.4;
+        const wave2 = Math.sin(time * 1.8 + i * 0.3) * 0.3;
+        const wave3 = Math.cos(time * 3.2 + i * 0.08) * 0.3;
+        const combinedWave = (wave1 + wave2 + wave3);
+        
+        const minBarH = 8;
+        const maxBarH = 35;
+        const barHeight = minBarH + Math.abs(combinedWave) * maxBarH;
+        
+        const x1 = centerX + Math.cos(angle) * (innerRadius + 4);
+        const y1 = centerY + Math.sin(angle) * (innerRadius + 4);
+        const x2 = centerX + Math.cos(angle) * (innerRadius + 4 + barHeight);
+        const y2 = centerY + Math.sin(angle) * (innerRadius + 4 + barHeight);
+
+        const opacity = 0.3 + Math.abs(combinedWave) * 0.7;
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = `rgba(204, 255, 0, ${opacity})`;
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      }
+
+      // Center dot with glow
+      const pulseSize = 5 + Math.sin(time * 2) * 1.5;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, pulseSize, 0, Math.PI * 2);
+      ctx.fillStyle = '#ccff00';
+      ctx.shadowBlur = 25;
+      ctx.shadowColor = 'rgba(204, 255, 0, 0.5)';
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Second pulse ring
+      const ringSize = 18 + Math.sin(time * 1.5) * 4;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, ringSize, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(204, 255, 0, ${0.15 + Math.sin(time * 1.5) * 0.1})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      animationId = requestAnimationFrame(draw);
     };
 
-    page.addEventListener('mouseover', onMouseOver);
-    page.addEventListener('mouseout', onMouseOut);
+    draw();
 
     return () => {
-      page.removeEventListener('mouseover', onMouseOver);
-      page.removeEventListener('mouseout', onMouseOut);
+      window.removeEventListener('resize', resize);
+      cancelAnimationFrame(animationId);
     };
   }, []);
 
   // Calculator derived value
-  const annualLoss = Math.round(calls * (missRate / 100) * dealValue * 365);
+  const annualLoss = calls * dealValue * 12;
 
   return (
     <div ref={pageRef} className={`${s.page} ${cursorHover ? s.cursorHover : ''}`}>
@@ -197,13 +279,63 @@ export default function HomePage() {
           </div>
         </nav>
 
-        {/* ─── HERO (Refactored Component) ────────────────── */}
-        <Hero revealClass={s.reveal} />
+        {/* ─── HERO ────────────────────────────────────── */}
+        <header className={s.hero}>
+          <div className={`${s.reveal}`}>
+            <div className={s.heroLabel} data-hover>AI Receptionist v2.0</div>
+            <h1 className={s.heroTitle}>
+              Stop Losing<br />
+              <span className={s.textAccent}>₹50,000+</span><br />
+              To Missed Calls.
+            </h1>
+            <p className={s.heroSubtitle}>
+              Deploy a 24/7 AI Receptionist that sounds human, books appointments, and captures every lead. Stop bleeding revenue today.
+            </p>
+            <div className={s.heroBullets}>
+              {['100% Human Voice', '24/7 Availability', '48hr Setup', 'No Lock-in'].map((item) => (
+                <div key={item} className={s.bulletItem}>
+                  <span className={s.bulletCheck}>+</span>
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+            <div className={s.heroBtns}>
+              <a href="/demo" className={s.btnPrimary} data-hover>Try Our Demo</a>
+              <a href="/book" className={s.btn} data-hover>Contact Us</a>
+            </div>
+            {/* Trust signals */}
+            <div className={s.trustRow}>
+              <span className={s.trustItem}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="12" height="12"><path d="M9 12l2 2 4-4" /></svg>
+                No Credit Card
+              </span>
+              <span className={s.trustItem}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="12" height="12"><path d="M9 12l2 2 4-4" /></svg>
+                Cancel Anytime
+              </span>
+              <span className={s.trustItem}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="12" height="12"><path d="M9 12l2 2 4-4" /></svg>
+                Hindi, English, Gujarati
+              </span>
+            </div>
+          </div>
+
+          {/* Voice Wave Visualizer (Canvas) */}
+          <div className={`${s.reveal}`} style={{ transitionDelay: '0.1s' }}>
+            <div className={s.waveContainer} data-hover>
+              <canvas ref={canvasRef} className={s.waveCanvas} />
+              <div className={s.waveLabel}>
+                <span className={s.waveLabelDot} />
+                Live Voice Agent
+              </div>
+            </div>
+          </div>
+        </header>
 
         {/* ─── PROBLEM: CHAOS STORY ──────────────────────── */}
         <section className={s.problemSection}>
           <div className={s.problemGrid}>
-            <div className={`${s.problemContent} ${s.reveal}`}>
+            <div className={s.reveal}>
               <h3 className={s.columnLabel}>The Reality</h3>
               <h2 className={s.problemTitle}>
                 The Hidden Cost of<br /><span className={s.textDanger}>Missed Calls.</span>
@@ -236,71 +368,42 @@ export default function HomePage() {
               {/* Chain Reaction */}
               <div className={s.chainReaction}>
                 <h4 className={s.chainTitle}>The Domino Effect</h4>
-                {CHAIN_ITEMS.map((item, i) => {
-                  const isOpen = openChain === i;
-                  const triggerId = `chain-trigger-${i}`;
-                  const panelId = `chain-panel-${i}`;
-
-                  return (
-                    <div key={i} className={s.chainItem}>
-                      <button
-                        type="button"
-                        id={triggerId}
-                        className={`${s.chainBtn} ${isOpen ? s.chainBtnOpen : ''}`}
-                        aria-expanded={isOpen}
-                        aria-controls={panelId}
-                        onClick={() => setOpenChain(isOpen ? null : i)}
-                        data-hover
-                      >
-                        <span>{item.title}</span>
-                        <span className={s.chainArrow}>&#9660;</span>
-                      </button>
-                      {isOpen && (
-                        <div id={panelId} role="region" aria-labelledby={triggerId} className={s.chainAnswer}>
-                          {item.content}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                {CHAIN_ITEMS.map((item, i) => (
+                  <div key={i} className={s.chainItem}>
+                    <button
+                      className={`${s.chainBtn} ${openChain === i ? s.chainBtnOpen : ''}`}
+                      onClick={() => setOpenChain(openChain === i ? null : i)}
+                      data-hover
+                    >
+                      <span>{item.title}</span>
+                      <span className={s.chainArrow}>&#9660;</span>
+                    </button>
+                    {openChain === i && (
+                      <div className={s.chainAnswer}>{item.content}</div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
 
             {/* Right: Calculator */}
-            <div className={`${s.calcColumn} ${s.reveal}`} style={{ transitionDelay: '0.1s' }}>
+            <div className={`${s.reveal}`} style={{ transitionDelay: '0.1s' }}>
               <h3 className={s.columnLabel}>The Cost</h3>
               <div className={s.calcBox}>
                 <h4 className={s.calcBoxTitle}>Your Business&apos;s Lost Revenue</h4>
                 <div className={s.sliderGroup} data-hover>
                   <div className={s.sliderHeader}>
-                    <span>Calls / Day</span>
+                    <span>Missed Calls / Month</span>
                     <span className={s.sliderValue}>{numFormat.format(calls)}</span>
                   </div>
                   <input
                     type="range"
-                    min={5}
+                    min={10}
                     max={200}
                     value={calls}
-                    onChange={(e) => setCalls(parseInt(e.target.value, 10))}
+                    onChange={(e) => setCalls(parseInt(e.target.value))}
                     className={s.slider}
-                    aria-label="Calls per day"
-                  />
-                </div>
-
-                <div className={s.sliderGroup} data-hover>
-                  <div className={s.sliderHeader}>
-                    <span>Miss Rate (%)</span>
-                    <span className={s.sliderValue}>{missRate}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={5}
-                    max={80}
-                    step={1}
-                    value={missRate}
-                    onChange={(e) => setMissRate(parseInt(e.target.value, 10))}
-                    className={s.slider}
-                    aria-label="Miss rate percentage"
+                    aria-label="Missed calls per month"
                   />
                 </div>
 
@@ -315,7 +418,7 @@ export default function HomePage() {
                     max={10000}
                     step={500}
                     value={dealValue}
-                    onChange={(e) => setDealValue(parseInt(e.target.value, 10))}
+                    onChange={(e) => setDealValue(parseInt(e.target.value))}
                     className={s.slider}
                     aria-label="Average value per lead"
                   />
@@ -324,14 +427,6 @@ export default function HomePage() {
                 <div className={s.resultBox}>
                   <div className={s.resultLabel}>Revenue Lost Annually</div>
                   <div className={s.resultNumber}>{inrFormat.format(annualLoss)}</div>
-                </div>
-
-                {/* Monthly insight box */}
-                <div className={s.calcInsightBox}>
-                  <span className={s.calcInsightIcon}>!</span>
-                  <p className={s.calcInsightText}>
-                    That&apos;s <strong className={s.textAccent}>₹{numFormat.format(Math.round(annualLoss / 12))}</strong> lost every month
-                  </p>
                 </div>
 
                 {/* Hidden costs grid */}
@@ -523,37 +618,25 @@ export default function HomePage() {
           </h2>
 
           <div className={s.faqContainer}>
-            {FAQS.map((faq, i) => {
-              const isOpen = activeFaq === i;
-              const triggerId = `faq-trigger-${i}`;
-              const panelId = `faq-panel-${i}`;
-
-              return (
-                <div key={i} className={`${s.faqItem} ${s.reveal}`} style={{ transitionDelay: `${i * 0.04}s` }}>
-                  <button
-                    type="button"
-                    id={triggerId}
-                    className={s.faqButton}
-                    aria-expanded={isOpen}
-                    aria-controls={panelId}
-                    onClick={() => setActiveFaq(isOpen ? null : i)}
-                    data-hover
-                  >
-                    <span>{faq.q}</span>
-                    <span className={`${s.faqArrow} ${isOpen ? s.faqArrowOpen : ''}`}>&#9660;</span>
-                  </button>
-                  {isOpen && (
-                    <div id={panelId} role="region" aria-labelledby={triggerId} className={s.faqAnswer}>
-                      {faq.a}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {FAQS.map((faq, i) => (
+              <div key={i} className={`${s.faqItem} ${s.reveal}`} style={{ transitionDelay: `${i * 0.04}s` }}>
+                <button
+                  className={s.faqButton}
+                  onClick={() => setActiveFaq(activeFaq === i ? null : i)}
+                  data-hover
+                >
+                  <span>{faq.q}</span>
+                  <span className={`${s.faqArrow} ${activeFaq === i ? s.faqArrowOpen : ''}`}>&#9660;</span>
+                </button>
+                {activeFaq === i && (
+                  <div className={s.faqAnswer}>{faq.a}</div>
+                )}
+              </div>
+            ))}
           </div>
         </section>
 
-        {/* ─── ASK AI CTA (Without duplicate contact form) ──────────────── */}
+        {/* ─── ASK AI CTA ──────────────────────────────── */}
         <section className={`${s.askAiSection} ${s.reveal}`}>
           <div className={s.askAiCard}>
             <h3 className={s.askAiTitle}>Questions? Ask Our Voice Agent Live</h3>
@@ -572,7 +655,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Contact section removed as per request */}
       </div>
 
       {/* ─── MARQUEE CTA ─────────────────────────────── */}
