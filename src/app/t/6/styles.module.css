@@ -65,10 +65,21 @@
   background: #000;
   cursor: pointer;
   transition: background 0.2s ease;
+  border: 1px solid #000;
+  padding: 0;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  appearance: none;
 }
 
 .ctaBox:hover {
   background: #ff5722;
+}
+
+.ctaBox:focus-visible {
+  outline: 3px solid #ff5722;
+  outline-offset: -3px;
 }
 
 .ctaText {

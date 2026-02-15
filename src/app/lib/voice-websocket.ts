@@ -45,6 +45,7 @@ export class VoiceWebSocket {
           this.config.onClose?.(event);
           if (!settled) {
             reject(new Error('WebSocket closed before connection'));
+            return;
           }
           if (this.enableReconnect && !this.intentionalDisconnect) {
             this.attemptReconnect();

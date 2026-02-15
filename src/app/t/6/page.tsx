@@ -29,9 +29,9 @@ export default function Page() {
         <p style={{marginTop: '1rem', fontSize: '1rem', opacity: 0.6}}>BUILT FOR PRECISION. OPTIMIZED FOR SPEED. UNCOMPROMISING AESTHETICS.</p>
       </div>
 
-      <div className={styles.box + ' ' + styles.ctaBox}>
+      <button type="button" className={styles.box + ' ' + styles.ctaBox} aria-label="Launch">
         <span className={styles.ctaText}>Launch →</span>
-      </div>
+      </button>
     </main>
   );
 }

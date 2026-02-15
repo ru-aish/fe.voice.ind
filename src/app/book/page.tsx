@@ -116,7 +116,9 @@ export default function BookingPage() {
   };
 
   // Submit handler
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
     if (!name.trim() || !email.trim()) {
       setError('Name and email are required.');
       return;
@@ -134,7 +136,7 @@ export default function BookingPage() {
     setError(null);
 
     try {
-      // Simulate API call — wire this to your backend when ready
+      // TODO: Replace with real booking API call once endpoint is available.
       await new Promise((r) => setTimeout(r, 1500));
       setSuccess(true);
     } catch {
@@ -254,7 +256,7 @@ export default function BookingPage() {
 
           {/* ── Right: Form ── */}
           <div className={s.formSection}>
-            <div className={s.formCard}>
+            <form className={s.formCard} onSubmit={handleSubmit} data-track="form_submit">
               {/* Step indicator */}
               <div className={s.steps}>
                 <div className={`${s.step} ${s.stepActive}`}>
@@ -375,9 +377,8 @@ export default function BookingPage() {
 
               {/* Submit */}
               <button
-                type="button"
+                type="submit"
                 className={s.submitBtn}
-                onClick={handleSubmit}
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
@@ -398,7 +399,7 @@ export default function BookingPage() {
               <p className={s.formFootnote}>
                 Or try our AI voice agent first: <a href="/demo">Talk to AI</a>
               </p>
-            </div>
+            </form>
           </div>
         </div>
       </div>

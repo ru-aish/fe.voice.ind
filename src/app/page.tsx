@@ -71,6 +71,7 @@ export default function HomePage() {
 
   // Calculator state
   const [calls, setCalls] = useState(45);
+  const [missRate, setMissRate] = useState(30);
   const [dealValue, setDealValue] = useState(2500);
 
   // FAQ state
@@ -105,17 +106,34 @@ export default function HomePage() {
     const outline = cursorOutlineRef.current;
     if (!dot || !outline) return;
 
-    const onMouseMove = (e: MouseEvent) => {
-      dot.style.left = `${e.clientX}px`;
-      dot.style.top = `${e.clientY}px`;
-      outline.animate(
-        { left: `${e.clientX}px`, top: `${e.clientY}px` },
-        { duration: 500, fill: 'forwards' }
-      );
+    let rafId = 0;
+    let targetX = 0;
+    let targetY = 0;
+    let currentX = 0;
+    let currentY = 0;
+
+    const loop = () => {
+      currentX += (targetX - currentX) * 0.18;
+      currentY += (targetY - currentY) * 0.18;
+      outline.style.left = `${currentX}px`;
+      outline.style.top = `${currentY}px`;
+      rafId = window.requestAnimationFrame(loop);
     };
 
+    const onMouseMove = (e: MouseEvent) => {
+      targetX = e.clientX;
+      targetY = e.clientY;
+      dot.style.left = `${targetX}px`;
+      dot.style.top = `${targetY}px`;
+    };
+
+    rafId = window.requestAnimationFrame(loop);
+
     window.addEventListener('mousemove', onMouseMove);
-    return () => window.removeEventListener('mousemove', onMouseMove);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.cancelAnimationFrame(rafId);
+    };
   }, []);
 
   // Hover targets for cursor
@@ -123,23 +141,31 @@ export default function HomePage() {
     if (!window.matchMedia('(pointer: fine)').matches) return;
     const page = pageRef.current;
     if (!page) return;
-    const targets = page.querySelectorAll('button, a, input[type="range"], input[type="text"], input[type="email"], input[type="tel"], textarea, [data-hover]');
-    const enter = () => setCursorHover(true);
-    const leave = () => setCursorHover(false);
-    targets.forEach((t) => {
-      t.addEventListener('mouseenter', enter);
-      t.addEventListener('mouseleave', leave);
-    });
+
+    const selector = 'button, a, input[type="range"], input[type="text"], input[type="email"], input[type="tel"], textarea, [data-hover]';
+    const onMouseOver = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest(selector)) {
+        setCursorHover(true);
+      }
+    };
+    const onMouseOut = (e: MouseEvent) => {
+      const related = e.relatedTarget as HTMLElement | null;
+      if (related?.closest(selector)) return;
+      setCursorHover(false);
+    };
+
+    page.addEventListener('mouseover', onMouseOver);
+    page.addEventListener('mouseout', onMouseOut);
+
     return () => {
-      targets.forEach((t) => {
-        t.removeEventListener('mouseenter', enter);
-        t.removeEventListener('mouseleave', leave);
-      });
+      page.removeEventListener('mouseover', onMouseOver);
+      page.removeEventListener('mouseout', onMouseOut);
     };
   }, []);
 
   // Calculator derived value
-  const annualLoss = calls * dealValue * 12;
+  const annualLoss = Math.round(calls * (missRate / 100) * dealValue * 12);
 
   return (
     <div ref={pageRef} className={`${s.page} ${cursorHover ? s.cursorHover : ''}`}>
@@ -229,17 +255,34 @@ export default function HomePage() {
                 <h4 className={s.calcBoxTitle}>Your Business&apos;s Lost Revenue</h4>
                 <div className={s.sliderGroup} data-hover>
                   <div className={s.sliderHeader}>
-                    <span>Missed Calls / Month</span>
+                    <span>Total Calls / Month</span>
                     <span className={s.sliderValue}>{numFormat.format(calls)}</span>
                   </div>
                   <input
                     type="range"
                     min={10}
-                    max={200}
+                    max={500}
                     value={calls}
-                    onChange={(e) => setCalls(parseInt(e.target.value))}
+                    onChange={(e) => setCalls(parseInt(e.target.value, 10))}
                     className={s.slider}
-                    aria-label="Missed calls per month"
+                    aria-label="Total calls per month"
+                  />
+                </div>
+
+                <div className={s.sliderGroup} data-hover>
+                  <div className={s.sliderHeader}>
+                    <span>Miss Rate (%)</span>
+                    <span className={s.sliderValue}>{missRate}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={5}
+                    max={80}
+                    step={1}
+                    value={missRate}
+                    onChange={(e) => setMissRate(parseInt(e.target.value, 10))}
+                    className={s.slider}
+                    aria-label="Miss rate percentage"
                   />
                 </div>
 
@@ -254,7 +297,7 @@ export default function HomePage() {
                     max={10000}
                     step={500}
                     value={dealValue}
-                    onChange={(e) => setDealValue(parseInt(e.target.value))}
+                    onChange={(e) => setDealValue(parseInt(e.target.value, 10))}
                     className={s.slider}
                     aria-label="Average value per lead"
                   />

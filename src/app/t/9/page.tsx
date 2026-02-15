@@ -42,21 +42,21 @@ export default function HomePage() {
             role: "CEO, TechScale Solutions",
             quote: "We were losing 40% of leads because nobody picked up calls after hours. Now every call is attended, and bookings are up 67%. Total game changer for our business.",
             metric: "67% more conversions",
-            image: "/images/testimonials/rajesh.png"
+            image: "/images/testimonials/james.png"
         },
         {
             name: "Priya Sharma",
             role: "Operations Head, GrowthBox",
             quote: "The AI handles inquiries, schedules demos, and follows up — everything is automated. Our team now focuses only on closing deals instead of answering phones all day.",
             metric: "₹8L saved monthly",
-            image: "/images/testimonials/priya.png"
+            image: "/images/testimonials/sarah.png"
         },
         {
             name: "Amit Verma",
             role: "Founder, QuickServ India",
             quote: "Customer complaints about wait times dropped 90%. The AI picks up instantly and resolves queries faster than any receptionist we ever hired. Best investment this year.",
             metric: "90% faster response",
-            image: "/images/testimonials/amit.png"
+            image: "/images/testimonials/michael.png"
         }
     ];
 

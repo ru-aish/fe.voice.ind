@@ -38,6 +38,51 @@ interface QueuedAction {
 // Global session start time - set once per module load, persists across Strict Mode re-renders
 // This is intentional: we want a single session start time even in Strict Mode
 const globalSessionStartTime = Date.now();
+let globalSessionStartSent = false;
+
+// Shared queue for external trackAction() calls outside the Tracker component tree
+const externalActionQueue: QueuedAction[] = [];
+let externalFlushTimeout: ReturnType<typeof setTimeout> | null = null;
+let isExternalFlushing = false;
+let externalPagehideListenerAttached = false;
+
+async function flushExternalQueue(): Promise<void> {
+    if (isExternalFlushing) return;
+    if (externalActionQueue.length === 0) return;
+
+    isExternalFlushing = true;
+    const actionsToSend = externalActionQueue.splice(0, externalActionQueue.length);
+
+    try {
+        const success = await sendActionsWithFetch(actionsToSend);
+        if (!success) {
+            externalActionQueue.unshift(...actionsToSend);
+        }
+    } finally {
+        isExternalFlushing = false;
+    }
+}
+
+function scheduleExternalFlush(): void {
+    if (externalFlushTimeout) return;
+    externalFlushTimeout = setTimeout(async () => {
+        externalFlushTimeout = null;
+        await flushExternalQueue();
+    }, BATCH_INTERVAL);
+}
+
+function attachExternalPagehideFlush(): void {
+    if (externalPagehideListenerAttached || typeof window === 'undefined') return;
+
+    window.addEventListener('pagehide', () => {
+        if (externalActionQueue.length > 0) {
+            sendActionsWithBeacon(externalActionQueue);
+            externalActionQueue.length = 0;
+        }
+    });
+
+    externalPagehideListenerAttached = true;
+}
 
 /**
  * Format milliseconds to MM:SS.mmm
@@ -119,11 +164,8 @@ export function Tracker() {
     const isFlushingRef = useRef(false);
     const batchIntervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
     
-    // Persistent ref for session_start guard - survives Strict Mode re-renders
+    // Persistent ref for this mounted instance
     const sessionStartSentRef = useRef(false);
-    
-    // Track if this is the first mount (for Strict Mode compatibility)
-    const isMountedRef = useRef(false);
 
     /**
      * Get current timestamp in milliseconds since session start
@@ -175,16 +217,11 @@ export function Tracker() {
     }, []);
 
     useEffect(() => {
-        // Strict Mode guard: only run session initialization once
-        if (isMountedRef.current) {
-            return;
-        }
-        isMountedRef.current = true;
-
-        // Record session start only once (persists across Strict Mode re-renders)
-        if (!sessionStartSentRef.current) {
+        // Record session start once per page lifecycle (including Strict Mode remounts)
+        if (!sessionStartSentRef.current && !globalSessionStartSent) {
             queueAction('session_start');
             sessionStartSentRef.current = true;
+            globalSessionStartSent = true;
         }
 
         // ========================================
@@ -399,15 +436,16 @@ export function Tracker() {
  * trackAction('api_calendar', 'booking_request');
  */
 export function trackAction(action: string, extra?: string) {
+    attachExternalPagehideFlush();
+
     const t_ms = Date.now() - globalSessionStartTime;
     
     if (DEBUG) {
         console.log(`[Tracker] ${formatTime(t_ms)} ${action}${extra ? ` (${extra})` : ''} [external]`);
     }
     
-    // For external calls, send immediately since we don't have access to the queue ref
-    // Use beacon for reliability
-    sendActionsWithBeacon([{ action, t_ms, extra }]);
+    externalActionQueue.push({ action, t_ms, extra });
+    scheduleExternalFlush();
 }
 
 /**

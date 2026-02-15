@@ -2,6 +2,13 @@ import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 
+const DEFAULT_PROMPT = {
+  id: 'default',
+  title: 'Default Assistant',
+  filename: 'default.md',
+  content: 'You are a helpful voice assistant. Respond concisely and naturally.',
+};
+
 export async function GET() {
   try {
     const promptsDir = path.join(process.cwd(), 'prompts');
@@ -11,14 +18,7 @@ export async function GET() {
 
     if (mdFiles.length === 0) {
       return NextResponse.json({
-        prompts: [
-          {
-            id: 'default',
-            title: 'Default Assistant',
-            filename: 'default.md',
-            content: 'You are a helpful voice assistant. Respond concisely and naturally.',
-          },
-        ],
+        prompts: [DEFAULT_PROMPT],
       });
     }
 
@@ -47,6 +47,12 @@ export async function GET() {
 
     if (errors.length > 0) {
       console.warn('Failed to read some prompt files:', errors);
+    }
+
+    if (prompts.length === 0 && errors.length > 0) {
+      return NextResponse.json({
+        prompts: [DEFAULT_PROMPT],
+      });
     }
 
     return NextResponse.json({ prompts });
