@@ -1,56 +1,41 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
+import { promises as fs } from 'fs';
 import path from 'path';
 
 export async function GET() {
   try {
     const promptsDir = path.join(process.cwd(), 'prompts');
-    
-    if (!fs.existsSync(promptsDir)) {
-      // Try to read default.md from project root if prompts dir doesn't exist
-      const defaultPath = path.join(process.cwd(), 'prompts', 'default.md');
-      try {
-        const content = fs.readFileSync(defaultPath, 'utf-8');
-        const titleMatch = content.match(/^#\s+(.+)$/m);
-        return NextResponse.json({ prompts: [
-          {
-            id: 'default',
-            title: titleMatch ? titleMatch[1] : 'Default Assistant',
-            filename: 'default.md',
-            content: content,
-          }
-        ]});
-      } catch {
-        // Fallback if file read fails
-        return NextResponse.json({ prompts: [
+
+    const files = await fs.readdir(promptsDir).catch(() => []);
+    const mdFiles = files.filter((file) => file.endsWith('.md'));
+
+    if (mdFiles.length === 0) {
+      return NextResponse.json({
+        prompts: [
           {
             id: 'default',
             title: 'Default Assistant',
             filename: 'default.md',
             content: 'You are a helpful voice assistant. Respond concisely and naturally.',
-          }
-        ]});
-      }
+          },
+        ],
+      });
     }
 
-    const files = fs.readdirSync(promptsDir);
-    
-    const prompts = files
-      .filter(file => file.endsWith('.md'))
-      .map(file => {
+    const prompts = await Promise.all(
+      mdFiles.map(async (file) => {
         const filePath = path.join(promptsDir, file);
-        const content = fs.readFileSync(filePath, 'utf-8');
-        
+        const content = await fs.readFile(filePath, 'utf-8');
         const titleMatch = content.match(/^#\s+(.+)$/m);
-        const title = titleMatch ? titleMatch[1] : file.replace('.md', '');
-        
+
         return {
           id: file.replace('.md', ''),
-          title: title,
+          title: titleMatch ? titleMatch[1] : file.replace('.md', ''),
           filename: file,
-          content: content,
+          content,
         };
-      });
+      })
+    );
 
     return NextResponse.json({ prompts });
   } catch (error) {

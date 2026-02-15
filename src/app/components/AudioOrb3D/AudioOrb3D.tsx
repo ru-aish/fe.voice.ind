@@ -85,33 +85,6 @@ const AudioOrb3D = forwardRef<AudioOrb3DHandle>((_, ref) => {
       mounted = false;
       
       if (elementRef.current) {
-        try {
-          const litElement = elementRef.current as unknown as {
-            pause?: () => void;
-            inputAudioContext?: { close: () => void; state: string } | null;
-            outputAudioContext?: { close: () => void; state: string } | null;
-            mediaStream?: { getTracks: () => MediaStreamTrack[] } | null;
-          };
-          
-          if (typeof litElement.pause === 'function') {
-            litElement.pause();
-          }
-          
-          if (litElement.inputAudioContext) {
-            litElement.inputAudioContext.close();
-          }
-          
-          if (litElement.outputAudioContext) {
-            litElement.outputAudioContext.close();
-          }
-          
-          if (litElement.mediaStream) {
-            litElement.mediaStream.getTracks().forEach((track) => {
-              track.stop();
-            });
-          }
-        } catch {}
-        
         if (elementRef.current.parentNode) {
           elementRef.current.parentNode.removeChild(elementRef.current);
         }

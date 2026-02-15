@@ -1,25 +1,34 @@
 export interface VoiceWebSocketConfig {
   url: string;
   onOpen?: () => void;
-  onClose?: () => void;
+  onClose?: (event: CloseEvent) => void;
   onError?: (error: Event) => void;
   onMessage?: (data: unknown) => void;
+  enableReconnect?: boolean;
+  maxReconnectAttempts?: number;
+  reconnectDelay?: number;
 }
 
 export class VoiceWebSocket {
   private ws: WebSocket | null = null;
   private config: VoiceWebSocketConfig;
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private reconnectDelay = 1000;
+  private maxReconnectAttempts: number;
+  private reconnectDelay: number;
+  private enableReconnect: boolean;
+  private intentionalDisconnect = false;
 
   constructor(config: VoiceWebSocketConfig) {
     this.config = config;
+    this.maxReconnectAttempts = config.maxReconnectAttempts ?? 5;
+    this.reconnectDelay = config.reconnectDelay ?? 1000;
+    this.enableReconnect = config.enableReconnect ?? true;
   }
 
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
+        this.intentionalDisconnect = false;
         this.ws = new WebSocket(this.config.url);
 
         this.ws.onopen = () => {
@@ -29,10 +38,12 @@ export class VoiceWebSocket {
           resolve();
         };
 
-        this.ws.onclose = () => {
+        this.ws.onclose = (event) => {
           console.log('WebSocket closed');
-          this.config.onClose?.();
-          this.attemptReconnect();
+          this.config.onClose?.(event);
+          if (this.enableReconnect && !this.intentionalDisconnect) {
+            this.attemptReconnect();
+          }
         };
 
         this.ws.onerror = (error) => {
@@ -86,6 +97,7 @@ export class VoiceWebSocket {
 
   disconnect(): void {
     if (this.ws) {
+      this.intentionalDisconnect = true;
       this.ws.close();
       this.ws = null;
     }

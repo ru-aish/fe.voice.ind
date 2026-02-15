@@ -3,34 +3,10 @@ import { customElement, property, state } from 'lit/decorators.js';
 import './visual-3d';
 import './settings';
 import type { AgentSettings } from './settings';
+import { VoiceWebSocket } from '../../lib/voice-websocket';
 
-// Voice server URL configuration
-// Priority: window.VOICE_SERVER_URL (runtime) > env var (build time) > default
-declare global {
-  interface Window {
-    VOICE_SERVER_URL?: string;
-  }
-}
-
-// Get URL at runtime (not at module load time)
 const getVoiceServerUrl = (): string => {
-  if (typeof window !== 'undefined') {
-    // Runtime config from config.js
-    if (window.VOICE_SERVER_URL) {
-      return window.VOICE_SERVER_URL;
-    }
-    // Auto-detect localhost
-    const hostname = window.location.hostname;
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.')) {
-      return 'ws://localhost:8081/';
-    }
-  }
-  // Build-time env var
-  if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_VOICE_SERVER_URL) {
-    return process.env.NEXT_PUBLIC_VOICE_SERVER_URL;
-  }
-  // Production fallback
-  return 'wss://voice-ind.onrender.com/';
+  return process.env.NEXT_PUBLIC_VOICE_SERVER_URL || 'ws://localhost:8081/';
 };
 
 interface ReadyMessage {
@@ -99,7 +75,7 @@ export class GdmLiveAudio extends LitElement {
   private outboundAudioPackets = 0;
   private inboundAudioPackets = 0;
 
-  private ws: WebSocket | null = null;
+  private voiceSocket: VoiceWebSocket | null = null;
   private sessionId: string | null = null;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 3;
@@ -113,7 +89,10 @@ export class GdmLiveAudio extends LitElement {
   private nextStartTime = 0;
   private mediaStream: MediaStream | null = null;
   private sourceNode: MediaStreamAudioSourceNode | null = null;
-  private scriptProcessorNode: ScriptProcessorNode | null = null;
+  private audioWorkletNode: AudioWorkletNode | null = null;
+  private captureSinkNode: GainNode | null = null;
+  private workletLoaded = false;
+  private microphonePacketCount = 0;
   private sources = new Set<AudioBufferSourceNode>();
   private audioQueue: Uint8Array[] = [];
   private isUserSpeaking = false;
@@ -553,10 +532,10 @@ export class GdmLiveAudio extends LitElement {
         const startTime = Date.now();
         const checkInterval = setInterval(() => {
           const elapsed = Date.now() - startTime;
-          if (!this.isConnecting && this.ws?.readyState === WebSocket.OPEN) {
+          if (!this.isConnecting && this.voiceSocket?.isConnected()) {
             clearInterval(checkInterval);
             resolve();
-          } else if (!this.isConnecting && this.ws?.readyState !== WebSocket.OPEN) {
+          } else if (!this.isConnecting && !this.voiceSocket?.isConnected()) {
             clearInterval(checkInterval);
             reject(new Error('Connection failed while waiting'));
           } else if (elapsed >= maxWaitMs) {
@@ -580,72 +559,76 @@ export class GdmLiveAudio extends LitElement {
         
         this.infoLog(`[VoiceAI] Connecting to ${serverUrl}...`);
         this.debugLog('ws_connect_attempt', { serverUrl });
-        this.ws = new WebSocket(serverUrl);
+        this.voiceSocket = new VoiceWebSocket({
+          url: serverUrl,
+          enableReconnect: false,
+          onOpen: () => {
+            clearTimeout(connectionTimeout);
+            this.infoLog('[VoiceAI] WebSocket connected');
+            this.debugLog('ws_open');
+            this.reconnectAttempts = 0;
+            this.isConnecting = false;
+            this.updateStatus('Connected to voice server...');
+            resolve();
+          },
+          onClose: (event) => {
+            clearTimeout(connectionTimeout);
+            this.infoLog(`[VoiceAI] WebSocket closed (code: ${event.code}, reason: ${event.reason})`);
+            this.debugLog('ws_close', { code: event.code, reason: event.reason });
+            this.isConnecting = false;
+            this.sessionId = null;
+
+            if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
+              this.updateStatus(`Connection lost. Reconnecting... (${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`);
+              setTimeout(() => {
+                this.reconnectAttempts++;
+                this.connectWebSocket().catch((err) => {
+                  this.errorLog('[VoiceAI] Reconnect failed:', err);
+                });
+              }, this.reconnectDelay);
+            }
+          },
+          onError: (event) => {
+            clearTimeout(connectionTimeout);
+            this.errorLog('[VoiceAI] WebSocket error:', event);
+            this.debugLog('ws_error', String((event as unknown as { type?: string })?.type || 'unknown'));
+            this.isConnecting = false;
+            this.updateError('Connection error. Please check if the server is running.');
+            reject(new Error('WebSocket error'));
+          },
+          onMessage: (message) => {
+            try {
+              if (!message || typeof message !== 'object' || !('type' in message)) {
+                this.warnLog('[VoiceAI] Ignoring unknown websocket message payload');
+                this.debugLog('ws_message_unknown_payload');
+                return;
+              }
+
+              const typedMessage = message as IncomingMessage;
+              this.debugLog('ws_message_in', {
+                type: (typedMessage as { type?: string }).type || 'unknown',
+              });
+              this.handleMessage(typedMessage);
+            } catch (err) {
+              this.errorLog('[VoiceAI] Failed to parse message:', err);
+              this.debugLog('ws_message_parse_error', String((err as Error)?.message || err));
+            }
+          },
+        });
 
         const connectionTimeout = setTimeout(() => {
-          if (this.ws?.readyState !== WebSocket.OPEN) {
+          if (!this.voiceSocket?.isConnected()) {
             this.errorLog('[VoiceAI] Connection timeout');
-            this.ws?.close();
+            this.voiceSocket?.disconnect();
             reject(new Error('Connection timeout'));
           }
         }, 10000);
 
-        this.ws.onopen = () => {
+        this.voiceSocket.connect().catch((err) => {
           clearTimeout(connectionTimeout);
-          this.infoLog('[VoiceAI] WebSocket connected');
-          this.debugLog('ws_open');
-          this.reconnectAttempts = 0;
           this.isConnecting = false;
-          this.updateStatus('Connected to voice server...');
-          resolve();
-        };
-
-        this.ws.onclose = (event) => {
-          clearTimeout(connectionTimeout);
-          this.infoLog(`[VoiceAI] WebSocket closed (code: ${event.code}, reason: ${event.reason})`);
-          this.debugLog('ws_close', { code: event.code, reason: event.reason });
-          this.isConnecting = false;
-          this.sessionId = null;
-          
-          // Attempt reconnection if not intentional close
-          if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
-            this.updateStatus(`Connection lost. Reconnecting... (${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`);
-            setTimeout(() => {
-              this.reconnectAttempts++;
-              this.connectWebSocket().catch((err) => {
-                this.errorLog('[VoiceAI] Reconnect failed:', err);
-              });
-            }, this.reconnectDelay);
-          }
-        };
-
-        this.ws.onerror = (event) => {
-          clearTimeout(connectionTimeout);
-          this.errorLog('[VoiceAI] WebSocket error:', event);
-          this.debugLog('ws_error', String((event as unknown as { type?: string })?.type || 'unknown'));
-          this.isConnecting = false;
-          this.updateError('Connection error. Please check if the server is running.');
-          reject(new Error('WebSocket error'));
-        };
-
-        this.ws.onmessage = (event) => {
-          try {
-            if (typeof event.data !== 'string') {
-              this.warnLog('[VoiceAI] Ignoring non-text websocket message');
-              this.debugLog('ws_message_non_text');
-              return;
-            }
-            const message: IncomingMessage = JSON.parse(event.data);
-            this.debugLog('ws_message_in', {
-              type: (message as { type?: string }).type || 'unknown',
-              bytes: event.data.length,
-            });
-            this.handleMessage(message);
-          } catch (err) {
-            this.errorLog('[VoiceAI] Failed to parse message:', err);
-            this.debugLog('ws_message_parse_error', String((err as Error)?.message || err));
-          }
-        };
+          reject(err);
+        });
       } catch (err) {
         this.isConnecting = false;
         reject(err);
@@ -879,17 +862,17 @@ export class GdmLiveAudio extends LitElement {
   }
 
   private sendConfig(config: Record<string, unknown>) {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+    if (this.voiceSocket?.isConnected()) {
       this.debugLog('ws_message_out', { type: 'config', config });
-      this.ws.send(JSON.stringify({
+      this.voiceSocket.send({
         type: 'config',
         data: { config },
-      }));
+      });
     }
   }
 
   private sendAudio(audioData: ArrayBuffer) {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+    if (this.voiceSocket?.isConnected()) {
       const base64 = this.arrayBufferToBase64(audioData);
       this.outboundAudioPackets += 1;
       this.debugLog('ws_message_out', {
@@ -897,10 +880,10 @@ export class GdmLiveAudio extends LitElement {
         bytes: audioData.byteLength,
         packet: this.outboundAudioPackets,
       });
-      this.ws.send(JSON.stringify({
+      this.voiceSocket.send({
         type: 'audio',
         data: { audio: base64 },
-      }));
+      });
     }
   }
 
@@ -1028,12 +1011,42 @@ export class GdmLiveAudio extends LitElement {
     this.infoLog(`[VoiceAI][debug] ${line}`);
   }
 
+  private async ensureAudioWorkletLoaded() {
+    if (this.workletLoaded) return;
+    await this.inputAudioContext.audioWorklet.addModule('/worklets/pcm-capture-processor.js');
+    this.workletLoaded = true;
+  }
+
+  private teardownAudioCaptureNodes() {
+    if (this.audioWorkletNode) {
+      this.audioWorkletNode.port.onmessage = null;
+      this.audioWorkletNode.port.close();
+      this.audioWorkletNode.disconnect();
+      this.audioWorkletNode = null;
+    }
+
+    if (this.captureSinkNode) {
+      this.captureSinkNode.disconnect();
+      this.captureSinkNode = null;
+    }
+
+    if (this.sourceNode) {
+      this.sourceNode.disconnect();
+      this.sourceNode = null;
+    }
+
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach((track) => track.stop());
+      this.mediaStream = null;
+    }
+  }
+
   private async startRecording() {
     if (this.isRecording) return;
 
     this.infoLog('[VoiceAI] Starting recording...');
 
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+    if (!this.voiceSocket?.isConnected()) {
       this.updateStatus('Connecting...');
       await this.connectWebSocket();
     }
@@ -1059,33 +1072,32 @@ export class GdmLiveAudio extends LitElement {
 
       this.sourceNode = this.inputAudioContext.createMediaStreamSource(this.mediaStream);
       this.sourceNode.connect(this.inputNode);
+      await this.ensureAudioWorkletLoaded();
 
-      const bufferSize = 256;
-      this.scriptProcessorNode = this.inputAudioContext.createScriptProcessor(bufferSize, 1, 1);
+      this.audioWorkletNode = new AudioWorkletNode(this.inputAudioContext, 'pcm-capture-processor', {
+        numberOfInputs: 1,
+        numberOfOutputs: 1,
+        channelCount: 1,
+      });
+      this.microphonePacketCount = 0;
 
-      let packetCount = 0;
-      this.scriptProcessorNode.onaudioprocess = (event) => {
-        if (!this.isRecording || !this.ws) return;
+      this.audioWorkletNode.port.onmessage = (event: MessageEvent<ArrayBuffer>) => {
+        if (!this.isRecording || !this.voiceSocket?.isConnected() || !(event.data instanceof ArrayBuffer)) return;
 
-        packetCount++;
-        if (packetCount % 100 === 0) {
-          this.infoLog(`[VoiceAI] Sent ${packetCount} audio packets`);
+        this.microphonePacketCount += 1;
+        if (this.microphonePacketCount % 100 === 0) {
+          this.infoLog(`[VoiceAI] Sent ${this.microphonePacketCount} audio packets`);
         }
 
-        const inputBuffer = event.inputBuffer;
-        const pcmData = inputBuffer.getChannelData(0);
-
-        const int16Data = new Int16Array(pcmData.length);
-        for (let i = 0; i < pcmData.length; i++) {
-          const s = Math.max(-1, Math.min(1, pcmData[i]));
-          int16Data[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-        }
-
-        this.sendAudio(int16Data.buffer);
+        this.sendAudio(event.data);
       };
 
-      this.sourceNode.connect(this.scriptProcessorNode);
-      this.scriptProcessorNode.connect(this.inputAudioContext.destination);
+      this.captureSinkNode = this.inputAudioContext.createGain();
+      this.captureSinkNode.gain.value = 0;
+
+      this.sourceNode.connect(this.audioWorkletNode);
+      this.audioWorkletNode.connect(this.captureSinkNode);
+      this.captureSinkNode.connect(this.inputAudioContext.destination);
 
       this.isRecording = true;
       this.updateStatus('Recording... Speak now!');
@@ -1101,29 +1113,21 @@ export class GdmLiveAudio extends LitElement {
     this.updateStatus('Stopping...');
 
     this.isRecording = false;
-
-    if (this.scriptProcessorNode && this.sourceNode) {
-      this.scriptProcessorNode.disconnect();
-      this.sourceNode.disconnect();
-    }
-
-    this.scriptProcessorNode = null;
-    this.sourceNode = null;
-
-    if (this.mediaStream) {
-      this.mediaStream.getTracks().forEach((track) => track.stop());
-      this.mediaStream = null;
-    }
+    this.teardownAudioCaptureNodes();
 
     this.updateStatus('Stopped. Click mic to start again.');
   }
 
   private reset() {
     this.infoLog('[VoiceAI] Resetting session...');
+
+    if (this.isRecording) {
+      this.stopRecording();
+    }
     
-    if (this.ws) {
-      this.ws.close();
-      this.ws = null;
+    if (this.voiceSocket) {
+      this.voiceSocket.disconnect();
+      this.voiceSocket = null;
     }
     
     this.stopCurrentAudio();
@@ -1146,9 +1150,9 @@ export class GdmLiveAudio extends LitElement {
     this.stopCurrentAudio();
     this.audioQueue = [];
     
-    if (this.ws) {
-      this.ws.close();
-      this.ws = null;
+    if (this.voiceSocket) {
+      this.voiceSocket.disconnect();
+      this.voiceSocket = null;
     }
     
     if (this.inputAudioContext.state === 'running') {
@@ -1214,7 +1218,7 @@ export class GdmLiveAudio extends LitElement {
       }
       this.infoLog('[VoiceAI] Settings updated:', event.detail);
 
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      if (this.voiceSocket?.isConnected()) {
         this.sendConfig({
           language: this.currentSettings.languageCode,
           ttsLanguage: this.resolveTtsLanguage(this.currentSettings.languageCode),
@@ -1233,6 +1237,34 @@ export class GdmLiveAudio extends LitElement {
 
       this.updateStatus('Settings updated!');
     }) as EventListener);
+  }
+
+  disconnectedCallback() {
+    if (this.voiceSocket) {
+      this.voiceSocket.disconnect();
+      this.voiceSocket = null;
+    }
+
+    if (this.isRecording) {
+      this.stopRecording();
+    } else {
+      this.teardownAudioCaptureNodes();
+    }
+
+    this.stopCurrentAudio();
+    this.audioQueue = [];
+    this.resetCC();
+    this.isConnecting = false;
+    this.sessionId = null;
+
+    if (this.inputAudioContext?.state !== 'closed') {
+      this.inputAudioContext.close().catch(() => {});
+    }
+    if (this.outputAudioContext?.state !== 'closed') {
+      this.outputAudioContext.close().catch(() => {});
+    }
+
+    super.disconnectedCallback();
   }
 
   render() {
