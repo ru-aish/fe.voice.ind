@@ -6,7 +6,7 @@
   grid-template-columns: 1fr 1fr;
   /* Increased gap as requested */
   gap: clamp(2rem, 8vw, 8rem); 
-  align-items: center; /* Vertically center content */
+  align-items: stretch; /* Stretch columns to equal height */
   position: relative;
   z-index: 10;
 }
@@ -121,11 +121,10 @@
 }
 
 .btnPrimary:hover {
-  background: #fff;
+  background: var(--accent-hover);
   color: var(--bg-base);
-  border-color: #fff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(255,255,255,0.2);
+  border-color: var(--accent-hover);
+  /* Removed transform and shadow for "normal" hover */
 }
 
 .btn {
