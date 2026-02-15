@@ -153,7 +153,7 @@ export default function BookingPage() {
         <div className={s.noise} />
         <div className={s.container}>
           <nav className={s.nav}>
-            <a href="/t/8" className={s.backLink}><ArrowLeft /><span>Back</span></a>
+            <a href="/" className={s.backLink}><ArrowLeft /><span>Back</span></a>
             <a href="/" className={s.logo}>Elevix.</a>
           </nav>
           <div className={s.successWrap}>
@@ -175,7 +175,7 @@ export default function BookingPage() {
               After our call, we&apos;ll build your AI receptionist in 48 hours.
             </p>
             <div className={s.successActions}>
-              <a href="/t/8" className={s.btnSecondary}>
+              <a href="/" className={s.btnSecondary}>
                 <ArrowLeft /> Back to Home
               </a>
               <a href="/demo" className={s.btnPrimary}>
@@ -200,7 +200,7 @@ export default function BookingPage() {
       <div className={s.container}>
         {/* Nav */}
         <nav className={s.nav}>
-          <a href="/t/8" className={s.backLink}><ArrowLeft /><span>Back</span></a>
+          <a href="/" className={s.backLink}><ArrowLeft /><span>Back</span></a>
           <a href="/" className={s.logo}>Elevix.</a>
         </nav>
 

@@ -85,16 +85,18 @@ export default function HomePage() {
     const els = document.querySelectorAll(`.${s.reveal}`);
     const observer = new IntersectionObserver(
       (entries) => {
-        entries.forEach((entry) => {
+        for (const entry of entries) {
           if (entry.isIntersecting) {
             entry.target.classList.add(s.revealActive);
             observer.unobserve(entry.target);
           }
-        });
+        }
       },
       { threshold: 0.1, rootMargin: '0px 0px -20px 0px' }
     );
-    els.forEach((el) => observer.observe(el));
+    els.forEach((el) => {
+      observer.observe(el);
+    });
     return () => observer.disconnect();
   }, []);
 

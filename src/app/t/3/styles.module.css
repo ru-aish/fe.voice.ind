@@ -543,9 +543,37 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .aurora-layer,
+  .aurora-1,
+  .aurora-2,
+  .aurora-3,
+  .aurora-4,
+  .gradient-mesh,
+  .particle,
+  .orb,
+  .orb-glow,
+  .orb-rings,
+  .demoDot,
   .waveBar {
     animation: none;
+    transform: none;
+  }
+
+  .waveBar {
     height: 32px;
+  }
+
+  .btn-fluid,
+  .btn-outline,
+  .btn-fluid::before,
+  .btn-outline::before {
+    transition: none;
+  }
+
+  .btn-fluid:hover,
+  .btn-outline:hover {
+    transform: none;
+    box-shadow: none;
   }
 }
 
@@ -1050,7 +1078,7 @@
 }
 
 .faqAnswer.open {
-  max-height: 200px;
+  max-height: none;
 }
 
 .faqAnswerText {
