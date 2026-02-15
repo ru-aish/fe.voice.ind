@@ -57,8 +57,8 @@ export default function Hero({ revealClass }: HeroProps) {
         </div>
       </div>
 
-      {/* Right Column: Visualizer */}
-      <div className={`${revealClass || ''}`} style={{ transitionDelay: '0.1s', height: '100%', display: 'flex' }}>
+      {/* Right Column: Visualizer (hidden on mobile via CSS) */}
+      <div className={`${s.heroVisualizer} ${revealClass || ''}`}>
         <WaveVisualizer />
       </div>
     </header>
