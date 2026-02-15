@@ -1,0 +1,102 @@
+.container {
+  min-height: 100vh;
+  background-color: #fff;
+  color: #000;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: repeat(12, 1fr);
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  border: 10px solid #000;
+  box-sizing: border-box;
+}
+
+.box {
+  border: 1px solid #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.titleBox {
+  grid-column: 1 / 9;
+  grid-row: 1 / 5;
+  background: #000;
+  color: #fff;
+  padding: 2rem;
+  align-items: flex-start;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.title {
+  font-size: 8vw;
+  font-weight: 900;
+  line-height: 0.8;
+  margin: 0;
+  letter-spacing: -0.05em;
+}
+
+.accentBox {
+  grid-column: 9 / 13;
+  grid-row: 1 / 5;
+  background: #ff5722; /* Safety Orange */
+}
+
+.animalBox {
+  grid-column: 1 / 7;
+  grid-row: 5 / 13;
+  padding: 2rem;
+}
+
+.contentBox {
+  grid-column: 7 / 13;
+  grid-row: 5 / 10;
+  padding: 3rem;
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.ctaBox {
+  grid-column: 7 / 13;
+  grid-row: 10 / 13;
+  background: #000;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.ctaBox:hover {
+  background: #ff5722;
+}
+
+.ctaText {
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.stickAnimal {
+  width: 100%;
+  height: auto;
+  stroke: #000;
+  stroke-width: 4;
+  fill: none;
+  transition: all 0.3s ease;
+}
+
+.box:hover .stickAnimal {
+  transform: scale(1.1) rotate(-5deg);
+  stroke: #ff5722;
+}
+
+.blink {
+  animation: blink 0.1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
