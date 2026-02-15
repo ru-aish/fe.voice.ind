@@ -1,12 +1,12 @@
-/* V16 - PT Clinic Landing Page */
-/* Pure black background with teal accents, waveform, conversation demo */
+/* V5 - Refined General Business Landing Page */
+/* Based on main homepage. Dark background with teal accents, polished UI */
 
 /* Base Container */
 .container {
     width: 100%;
     min-height: 100vh;
     overflow-x: hidden;
-    background: #000000;
+    background: #050505;
     color: #fafafa;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     position: relative;
@@ -29,7 +29,7 @@
     position: absolute;
     width: 2px;
     height: 2px;
-    background: rgba(20, 184, 166, 0.4);
+    background: rgba(20, 184, 166, 0.35);
     border-radius: 50%;
     animation: float linear infinite;
 }
@@ -39,15 +39,12 @@
         transform: translateY(100vh) translateX(0);
         opacity: 0;
     }
-
     10% {
         opacity: 1;
     }
-
     90% {
         opacity: 1;
     }
-
     100% {
         transform: translateY(-100px) translateX(100px);
         opacity: 0;
@@ -60,14 +57,14 @@
     top: 0;
     left: 0;
     right: 0;
-    padding: 1.25rem 3rem;
+    padding: 1rem 3rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
     z-index: 50;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(5, 5, 5, 0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .logo {
@@ -84,36 +81,20 @@
     color: #14b8a6;
 }
 
-.navPhone {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #14b8a6;
-    font-weight: 600;
-    font-size: 0.95rem;
-    text-decoration: none;
-    transition: all 0.3s ease;
-}
-
-.navPhone:hover {
-    color: #2dd4bf;
-}
-
-/* Nav Right Section */
 .navRight {
     display: flex;
     align-items: center;
     gap: 1.5rem;
 }
 
-/* HIPAA Badge */
-.hipaaBadge {
+/* Security Badge */
+.secureBadge {
     display: flex;
     align-items: center;
     gap: 0.4rem;
     padding: 0.4rem 0.75rem;
-    background: rgba(34, 197, 94, 0.1);
-    border: 1px solid rgba(34, 197, 94, 0.3);
+    background: rgba(34, 197, 94, 0.08);
+    border: 1px solid rgba(34, 197, 94, 0.25);
     border-radius: 6px;
     font-size: 0.75rem;
     font-weight: 600;
@@ -121,7 +102,7 @@
     letter-spacing: 0.02em;
 }
 
-.hipaaBadge svg {
+.secureBadge svg {
     color: #22c55e;
 }
 
@@ -145,8 +126,8 @@
     display: inline-flex;
     align-items: center;
     padding: 0.5rem 1rem;
-    background: rgba(20, 184, 166, 0.1);
-    border: 1px solid rgba(20, 184, 166, 0.3);
+    background: rgba(20, 184, 166, 0.08);
+    border: 1px solid rgba(20, 184, 166, 0.25);
     border-radius: 100px;
     font-size: 0.85rem;
     font-weight: 500;
@@ -158,8 +139,8 @@
 .heroTitle {
     font-size: 3.75rem;
     font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: -0.03em;
+    line-height: 1.08;
+    letter-spacing: -0.035em;
     margin-bottom: 2rem;
     color: #fafafa;
 }
@@ -203,44 +184,17 @@
     flex-shrink: 0;
 }
 
-.heroSubtitle {
-    font-size: 1.2rem;
-    color: #a1a1aa;
-    line-height: 1.7;
-    margin-bottom: 2.5rem;
-    max-width: 540px;
-}
-
 .heroCTA {
     display: flex;
     gap: 1rem;
-    margin-bottom: 1rem;
-}
-
-/* Secondary Trust Signals */
-.secondaryTrust {
-    display: flex;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.secondaryTrust span {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-size: 0.85rem;
-    color: #71717a;
-}
-
-.secondaryTrust svg {
-    color: #14b8a6;
+    margin-bottom: 1.5rem;
 }
 
 .btnPrimary {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 1rem 2rem;
+    padding: 1rem 2.25rem;
     background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
     color: #ffffff;
     font-weight: 600;
@@ -250,12 +204,12 @@
     cursor: pointer;
     transition: all 0.3s ease;
     text-decoration: none;
-    box-shadow: 0 4px 20px rgba(20, 184, 166, 0.3);
+    box-shadow: 0 4px 24px rgba(20, 184, 166, 0.3);
 }
 
 .btnPrimary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(20, 184, 166, 0.4);
+    box-shadow: 0 8px 32px rgba(20, 184, 166, 0.45);
 }
 
 .btnPrimary svg {
@@ -275,7 +229,7 @@
     color: #fafafa;
     font-weight: 600;
     font-size: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -284,30 +238,7 @@
 
 .btnSecondary:hover {
     background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.4);
-}
-
-.btnTrial {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 1rem 2rem;
-    background: #000000;
-    color: #fafafa;
-    font-weight: 600;
-    font-size: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-decoration: none;
-}
-
-.btnTrial:hover {
-    background: #1a1a1a;
-    border-color: #14b8a6;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(20, 184, 166, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 .trustBadges {
@@ -330,7 +261,7 @@
     display: flex;
     align-items: center;
     gap: 2rem;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
 }
 
 .integrationsLabel {
@@ -342,7 +273,7 @@
 .integrationLogos {
     display: flex;
     align-items: center;
-    gap: 3rem;
+    gap: 2.5rem;
 }
 
 .integrationBadge {
@@ -350,24 +281,25 @@
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
-    opacity: 0.8;
-    /* Make logos white for dark background, high contrast to remove potential grey artifacts */
-    filter: brightness(0) invert(1) contrast(1.5);
+    opacity: 0.6;
 }
 
 .integrationBadge:hover {
     opacity: 1;
     transform: translateY(-1px);
-    /* Keep white on hover, but maybe slightly brighter or different opacity */
-    filter: brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
 }
 
 .textLogo {
-    font-size: 1.5rem;
+    font-size: 1.35rem;
     font-weight: 700;
-    color: #000000;
+    color: #a1a1aa;
     letter-spacing: -0.02em;
     font-family: inherit;
+    transition: color 0.3s ease;
+}
+
+.integrationBadge:hover .textLogo {
+    color: #fafafa;
 }
 
 /* Hero Visual - Waveform */
@@ -379,69 +311,13 @@
 }
 
 .visualCard {
-    background: linear-gradient(145deg, rgba(20, 20, 20, 0.9) 0%, rgba(10, 10, 10, 0.95) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(145deg, rgba(18, 18, 18, 0.95) 0%, rgba(8, 8, 8, 0.98) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 24px;
     padding: 2rem;
     width: 100%;
     max-width: 500px;
-    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
-}
-
-/* Video Thumbnail */
-.videoThumbnail {
-    position: relative;
-    background: linear-gradient(135deg, rgba(20, 184, 166, 0.1) 0%, rgba(20, 184, 166, 0.05) 100%);
-    border: 1px solid rgba(20, 184, 166, 0.2);
-    border-radius: 16px;
-    padding: 2.5rem 2rem;
-    margin-bottom: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.videoThumbnail:hover {
-    background: linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, rgba(20, 184, 166, 0.08) 100%);
-    border-color: rgba(20, 184, 166, 0.4);
-}
-
-.playButton {
-    width: 64px;
-    height: 64px;
-    background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 1rem;
-    box-shadow: 0 8px 30px rgba(20, 184, 166, 0.4);
-    transition: all 0.3s ease;
-}
-
-.videoThumbnail:hover .playButton {
-    transform: scale(1.1);
-    box-shadow: 0 12px 40px rgba(20, 184, 166, 0.5);
-}
-
-.playButton svg {
-    color: #fff;
-    margin-left: 4px;
-}
-
-.videoLabel {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #fafafa;
-    margin-bottom: 0.25rem;
-}
-
-.videoDuration {
-    font-size: 0.85rem;
-    color: #71717a;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.6);
 }
 
 .waveform {
@@ -461,13 +337,10 @@
 }
 
 @keyframes wave {
-
-    0%,
-    100% {
+    0%, 100% {
         transform: scaleY(0.5);
         opacity: 0.5;
     }
-
     50% {
         transform: scaleY(1);
         opacity: 1;
@@ -501,12 +374,9 @@
 }
 
 @keyframes blink {
-
-    0%,
-    100% {
+    0%, 100% {
         opacity: 1;
     }
-
     50% {
         opacity: 0.3;
     }
@@ -562,52 +432,6 @@
     background: linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.4), transparent);
 }
 
-.problemGrid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-.problemCard {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 20px;
-    padding: 2rem;
-    text-align: center;
-    transition: all 0.4s ease;
-}
-
-.problemCard:hover {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(239, 68, 68, 0.3);
-    transform: translateY(-4px);
-}
-
-.problemStat {
-    font-size: 3rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 0.75rem;
-}
-
-.problemCard h3 {
-    font-size: 1.15rem;
-    font-weight: 600;
-    color: #fafafa;
-    margin-bottom: 0.75rem;
-}
-
-.problemCard p {
-    font-size: 0.95rem;
-    color: #71717a;
-    line-height: 1.6;
-}
-
 /* Two-Column Problem Layout */
 .problemColumns {
     display: grid;
@@ -615,16 +439,33 @@
     gap: 3rem;
     max-width: 1400px;
     margin: 0 auto;
+    align-items: start;
 }
 
 .problemLeft,
 .problemRight {
     display: flex;
     flex-direction: column;
+    min-height: 700px;
 }
 
 .problemRight {
-    min-height: 100%;
+    flex: 1;
+}
+
+.calculator {
+    background: linear-gradient(145deg, rgba(18, 18, 18, 0.95) 0%, rgba(8, 8, 8, 0.98) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.problemRight {
+    min-height: 700px;
 }
 
 .columnTitle {
@@ -641,8 +482,10 @@
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 16px;
-    padding: 1.25rem;
+    padding: 1.75rem;
     margin-bottom: 1.5rem;
+    flex: 1;
+    min-height: 400px;
 }
 
 .chaosItem {
@@ -726,7 +569,8 @@
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 16px;
-    padding: 1.25rem;
+    padding: 1.5rem;
+    flex: 1;
 }
 
 .chainTitle {
@@ -801,10 +645,10 @@
     line-height: 1.6;
 }
 
-/* Calculator - Updated for two-column layout */
+/* Calculator */
 .calculator {
-    background: linear-gradient(145deg, rgba(20, 20, 20, 0.9) 0%, rgba(10, 10, 10, 0.95) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(145deg, rgba(18, 18, 18, 0.95) 0%, rgba(8, 8, 8, 0.98) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 20px;
     padding: 1.5rem;
     box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
@@ -852,7 +696,7 @@
     width: 100%;
     height: 6px;
     border-radius: 3px;
-    background: rgba(245, 245, 244, 0.2);
+    background: rgba(245, 245, 244, 0.15);
     outline: none;
     -webkit-appearance: none;
     appearance: none;
@@ -872,7 +716,7 @@
 }
 
 .calcSlider::-webkit-slider-thumb:hover {
-    transform: scale(1.1);
+    transform: scale(1.15);
 }
 
 .calcSlider::-moz-range-thumb {
@@ -887,7 +731,7 @@
 }
 
 .calcSlider::-moz-range-thumb:hover {
-    transform: scale(1.1);
+    transform: scale(1.15);
 }
 
 .calcSliderLabels {
@@ -1020,13 +864,29 @@
     flex-direction: column;
 }
 
+.solutionBadge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.6rem 1.25rem;
+    background: linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, rgba(20, 184, 166, 0.05) 100%);
+    border: 1px solid rgba(20, 184, 166, 0.3);
+    border-radius: 100px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #2dd4bf;
+    margin-bottom: 1.75rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    width: fit-content;
+}
+
 .solutionTitle {
-    font-size: 2.5rem;
-    font-weight: 700;
+    font-size: 3rem;
+    font-weight: 800;
     color: #fafafa;
-    margin-bottom: 1.25rem;
-    letter-spacing: -0.02em;
-    line-height: 1.2;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
 }
 
 .solutionDescription {
@@ -1046,23 +906,25 @@
 .capabilityItem {
     display: flex;
     gap: 1rem;
-    padding: 1rem;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
     transition: all 0.3s ease;
 }
 
 .capabilityItem:hover {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(20, 184, 166, 0.3);
+    background: linear-gradient(135deg, rgba(20, 184, 166, 0.08) 0%, rgba(20, 184, 166, 0.02) 100%);
+    border-color: rgba(20, 184, 166, 0.35);
+    transform: translateX(4px);
 }
 
 .capabilityIcon {
-    width: 40px;
-    height: 40px;
-    background: rgba(20, 184, 166, 0.1);
-    border-radius: 10px;
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, rgba(20, 184, 166, 0.05) 100%);
+    border: 1px solid rgba(20, 184, 166, 0.2);
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1070,21 +932,22 @@
 }
 
 .capabilityIcon svg {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     color: #14b8a6;
 }
 
 .capabilityItem h4 {
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: 1.1rem;
+    font-weight: 700;
     color: #fafafa;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.3rem;
 }
 
 .capabilityItem p {
-    font-size: 0.9rem;
-    color: #71717a;
+    font-size: 0.95rem;
+    color: #a1a1aa;
+    line-height: 1.5;
 }
 
 .btnDemo {
@@ -1117,8 +980,8 @@
 }
 
 .conversationDemo {
-    background: linear-gradient(145deg, rgba(20, 20, 20, 0.9) 0%, rgba(10, 10, 10, 0.95) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(145deg, rgba(18, 18, 18, 0.95) 0%, rgba(8, 8, 8, 0.98) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 20px;
     width: 100%;
     max-width: 480px;
@@ -1131,7 +994,7 @@
     align-items: center;
     gap: 0.5rem;
     padding: 1rem 1.5rem;
-    background: rgba(239, 68, 68, 0.08);
+    background: rgba(239, 68, 68, 0.06);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -1158,12 +1021,27 @@
     gap: 1rem;
     max-height: 380px;
     overflow-y: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(20, 184, 166, 0.5) rgba(0, 0, 0, 0.2);
 }
 
 .conversationFlow::-webkit-scrollbar {
-    display: none;
+    width: 8px;
+}
+
+.conversationFlow::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+}
+
+.conversationFlow::-webkit-scrollbar-thumb {
+    background: rgba(20, 184, 166, 0.5);
+    border-radius: 10px;
+    border: 2px solid rgba(0, 0, 0, 0.2);
+}
+
+.conversationFlow::-webkit-scrollbar-thumb:hover {
+    background: rgba(20, 184, 166, 0.7);
 }
 
 .messageIncoming,
@@ -1216,8 +1094,8 @@
 }
 
 .messageOutgoing .messageBubble {
-    background: rgba(20, 184, 166, 0.12);
-    border: 1px solid rgba(20, 184, 166, 0.2);
+    background: rgba(20, 184, 166, 0.1);
+    border: 1px solid rgba(20, 184, 166, 0.18);
 }
 
 .messageBubble p {
@@ -1241,7 +1119,7 @@
     align-items: center;
     gap: 0.75rem;
     padding: 1rem 1.5rem;
-    background: rgba(20, 184, 166, 0.06);
+    background: rgba(20, 184, 166, 0.05);
     border-top: 1px solid rgba(20, 184, 166, 0.1);
 }
 
@@ -1425,7 +1303,7 @@
 .testimonialAvatar {
     width: 48px;
     height: 48px;
-    background: rgba(20, 184, 166, 0.15);
+    background: linear-gradient(135deg, rgba(20, 184, 166, 0.2), rgba(20, 184, 166, 0.1));
     border-radius: 50%;
     position: relative;
     overflow: hidden;
@@ -1441,190 +1319,6 @@
 .testimonialRole {
     font-size: 0.85rem;
     color: #71717a;
-}
-
-/* Pricing Section */
-.pricing {
-    padding: 6rem 5rem;
-    position: relative;
-    z-index: 1;
-    opacity: 0;
-    transform: translateY(20px);
-    transition: all 0.35s ease;
-}
-
-.pricing.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.pricing::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(20, 184, 166, 0.3), transparent);
-}
-
-.pricingGrid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 2rem;
-    max-width: 900px;
-    margin: 0 auto;
-}
-
-.pricingCard {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 24px;
-    padding: 2.5rem;
-    text-align: center;
-    position: relative;
-    transition: all 0.4s ease;
-}
-
-.pricingCard:hover {
-    background: rgba(255, 255, 255, 0.04);
-}
-
-.pricingCardFeatured {
-    border-color: rgba(20, 184, 166, 0.4);
-    background: rgba(20, 184, 166, 0.05);
-}
-
-.pricingCardFeatured:hover {
-    background: rgba(20, 184, 166, 0.08);
-}
-
-/* Pricing Card Hover Effect */
-.pricingCardHover {
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.pricingCardHover:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 25px 60px rgba(20, 184, 166, 0.2);
-    border-color: rgba(20, 184, 166, 0.5);
-}
-
-.pricingCardHover:hover .pricingAmount {
-    color: #14b8a6;
-}
-
-.pricingBadge {
-    position: absolute;
-    top: -12px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 0.4rem 1rem;
-    background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
-    color: #fff;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: 100px;
-    letter-spacing: 0.02em;
-}
-
-.pricingLabel {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #a1a1aa;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 1rem;
-}
-
-.pricingPrice {
-    margin-bottom: 1.5rem;
-}
-
-.pricingCurrency {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #14b8a6;
-    vertical-align: top;
-}
-
-.pricingAmount {
-    font-size: 4rem;
-    font-weight: 800;
-    color: #fafafa;
-    line-height: 1;
-}
-
-.pricingPeriod {
-    font-size: 1rem;
-    color: #71717a;
-}
-
-.pricingFeatures {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 2rem;
-    text-align: left;
-}
-
-.pricingFeatures li {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 0;
-    font-size: 0.95rem;
-    color: #a1a1aa;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.pricingFeatures li:last-child {
-    border-bottom: none;
-}
-
-.pricingFeatures svg {
-    width: 18px;
-    height: 18px;
-    color: #14b8a6;
-    flex-shrink: 0;
-}
-
-.pricingBtn {
-    display: inline-block;
-    width: 100%;
-    padding: 1rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #fafafa;
-    font-weight: 600;
-    font-size: 1rem;
-    border-radius: 12px;
-    text-decoration: none;
-    transition: all 0.3s ease;
-}
-
-.pricingBtn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-.pricingBtnFeatured {
-    display: inline-block;
-    width: 100%;
-    padding: 1rem;
-    background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
-    color: #ffffff;
-    font-weight: 600;
-    font-size: 1rem;
-    border: none;
-    border-radius: 12px;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 20px rgba(20, 184, 166, 0.3);
-}
-
-.pricingBtnFeatured:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(20, 184, 166, 0.4);
 }
 
 /* FAQ Section */
@@ -1748,7 +1442,7 @@
     letter-spacing: -0.02em;
 }
 
-.ctaContent>p {
+.ctaContent > p {
     font-size: 1.15rem;
     color: #71717a;
     margin-bottom: 2.5rem;
@@ -1780,7 +1474,10 @@
     color: #52525b;
 }
 
-/* Responsive */
+/* ======================== */
+/* Responsive               */
+/* ======================== */
+
 @media (max-width: 1200px) {
     .featureGrid {
         grid-template-columns: repeat(2, 1fr);
@@ -1805,18 +1502,8 @@
         margin: 0 auto 2.5rem;
     }
 
-    .heroSubtitle {
-        max-width: 100%;
-        margin: 0 auto 2.5rem;
-    }
-
     .heroCTA {
         justify-content: center;
-    }
-
-    .secondaryTrust {
-        justify-content: center;
-        flex-wrap: wrap;
     }
 
     .trustBadges {
@@ -1826,11 +1513,6 @@
     .integrations {
         justify-content: center;
         flex-wrap: wrap;
-    }
-
-    .problemGrid {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
     }
 
     .problemColumns {
@@ -1856,15 +1538,10 @@
         grid-template-columns: 1fr;
     }
 
-    .pricingGrid {
-        grid-template-columns: 1fr;
-    }
-
     .problem,
     .solution,
     .features,
     .testimonials,
-    .pricing,
     .faq,
     .finalCTA {
         padding: 3rem 2rem;
@@ -1880,29 +1557,24 @@
 }
 
 @media (max-width: 768px) {
-
-    /* 1. Base Layout & Typography */
     .container {
         overflow-x: hidden;
-        /* Prevent horizontal scroll from overflowing elements */
         width: 100%;
         position: relative;
     }
 
     .nav {
         padding: 0.75rem 1rem;
-        background: rgba(0, 0, 0, 0.95);
-        /* More opaque on mobile */
+        background: rgba(5, 5, 5, 0.95);
     }
 
-    .hipaaBadge {
+    .secureBadge {
         font-size: 0.7rem;
         padding: 0.35rem 0.6rem;
         gap: 0.3rem;
-        display: flex !important;
     }
 
-    .hipaaBadge svg {
+    .secureBadge svg {
         width: 12px;
         height: 12px;
     }
@@ -1915,15 +1587,11 @@
         font-size: 1.1rem;
     }
 
-    /* 2. Hero Section */
     .hero {
         padding: 6rem 1rem 3rem;
-        /* Tighter padding */
         gap: 2rem;
         text-align: left;
-        /* Align left usually reads better on mobile than centered */
         min-height: auto;
-        /* Remove 100vh constraint */
     }
 
     .badge {
@@ -1933,7 +1601,6 @@
 
     .heroTitle {
         font-size: 2.5rem;
-        /* Larger, punchier title */
         line-height: 1.1;
         letter-spacing: -0.04em;
         text-align: center;
@@ -1941,7 +1608,6 @@
 
     .heroTitle br {
         display: none;
-        /* Let text wrap naturally */
     }
 
     .heroBullets {
@@ -1956,365 +1622,18 @@
         font-size: 1rem;
         padding: 0.5rem 0;
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        /* Separators for readability */
     }
 
     .bulletItem:last-child {
         border-bottom: none;
     }
 
-    /* 3. Hero Visual - Full Width Card */
-    .visualCard {
-        margin: 0 -1.25rem;
-        /* Match section padding */
-        border-radius: 0;
-        /* Square edges */
-        border-left: none;
-        border-right: none;
-        padding: 1.5rem;
-        width: calc(100% + 2.5rem);
-        /* Match section padding * 2 */
-        max-width: none;
-    }
-
-    /* 4. Infinite Marquee for Integrations */
-    .integrations {
-        margin-top: 1rem;
-        width: 100%;
-        overflow: hidden;
-        mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-        -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-    }
-
-    .integrationsLabel {
-        display: block;
-        margin-bottom: 0.75rem;
-        text-align: center;
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-    }
-
-    .integrationLogos {
-        display: flex;
-        gap: 1rem;
-        animation: marquee 15s linear infinite;
-        width: max-content;
-        /* Ensure container fits content */
-    }
-
-    @keyframes marquee {
-        0% {
-            transform: translateX(0);
-        }
-
-        100% {
-            transform: translateX(-50%);
-        }
-
-        /* Needs duplicated content for true infinite, but this works for basic effect */
-    }
-
-    .integrationBadge {
-        flex-shrink: 0;
-        white-space: nowrap;
-    }
-
-    /* 5. Horizontal Scroll Snapping (Testimonials & Pricing) */
-    .testimonialGrid,
-    .pricingGrid,
-    .featureGrid,
-    .hiddenCostsGrid {
-        display: flex;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        gap: 1rem;
-        padding: 0.5rem 1.25rem 1.5rem 1.25rem;
-        /* Bottom padding for scrollbar space */
-        margin: 0 -1.25rem;
-        /* Edge-to-edge container */
-        width: calc(100% + 2.5rem);
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        /* Hide scrollbar Firefox */
-    }
-
-    .testimonialGrid::-webkit-scrollbar,
-    .pricingGrid::-webkit-scrollbar,
-    .featureGrid::-webkit-scrollbar,
-    .hiddenCostsGrid::-webkit-scrollbar {
-        display: none;
-        /* Hide scrollbar Chrome/Safari */
-    }
-
-    .testimonialCard,
-    .pricingCard,
-    .featureCard {
-        min-width: 85vw;
-        /* Show slightly less than full width to hint at more content */
-        scroll-snap-align: center;
-        margin: 0;
-    }
-
-    .hiddenCostItem {
-        min-width: 140px;
-        scroll-snap-align: start;
-        flex-direction: column;
-        text-align: center;
-        justify-content: center;
-    }
-
-    .hiddenCostItem svg {
-        display: block;
-        margin-bottom: 0.25rem;
-    }
-
-    /* 6. Sticky Bottom CTA */
-    .mobileStickyCTA {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: rgba(10, 10, 10, 0.95);
-        backdrop-filter: blur(12px);
-        padding: 1rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        z-index: 100;
-        display: block;
-        /* Visible on mobile */
-        animation: slideUp 0.5s ease-out 1s backwards;
-    }
-
-    .mobileStickyContent {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .mobileStickyText {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .mobileStickyTitle {
-        font-weight: 700;
-        font-size: 0.9rem;
-        color: #fafafa;
-    }
-
-    .mobileStickySub {
-        font-size: 0.75rem;
-        color: #a1a1aa;
-    }
-
-    .btnMobileSticky {
-        background: #14b8a6;
-        color: white;
-        padding: 0.6rem 1.25rem;
-        border-radius: 8px;
-        font-weight: 600;
-        text-decoration: none;
-        font-size: 0.9rem;
-    }
-
-    @keyframes slideUp {
-        from {
-            transform: translateY(100%);
-        }
-
-        to {
-            transform: translateY(0);
-        }
-    }
-
-    /* 7. Calculator Optimization */
-    .calculator {
-        padding: 1rem;
-        margin: 0 auto;
-        max-width: 100%;
-        width: 100%;
-        box-sizing: border-box;
-        overflow: hidden;
-    }
-
-    .calcTitle {
-        font-size: 0.95rem;
-        margin-bottom: 1rem;
-    }
-
-    .calcSliders {
-        gap: 0.75rem;
-        /* Reduce gap between sliders */
-        margin-bottom: 1rem;
-    }
-
-    .calcSliderGroup {
-        background: rgba(255, 255, 255, 0.03);
-        padding: 0.75rem;
-        border-radius: 10px;
-        gap: 0.25rem;
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    .calcSliderHeader {
-        margin-bottom: 0.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .calcSliderHeader label {
-        font-size: 0.85rem;
-        color: #d4d4d8;
-    }
-
-    .calcValue {
-        font-weight: 600;
-        color: #14b8a6;
-    }
-
-    /* Custom Range Slider Styling */
-    .calcSlider {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 100%;
-        height: 6px;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 3px;
-        outline: none;
-        margin: 0.5rem 0;
-    }
-
-    .calcSlider::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background: #14b8a6;
-        cursor: pointer;
-        box-shadow: 0 0 10px rgba(20, 184, 166, 0.4);
-    }
-
-    .calcSlider::-moz-range-thumb {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background: #14b8a6;
-        cursor: pointer;
-        border: none;
-        box-shadow: 0 0 10px rgba(20, 184, 166, 0.4);
-    }
-
-    .calcResult {
-        padding: 1rem;
-        margin-bottom: 0.75rem;
-        text-align: center;
-        /* Center result */
-    }
-
-    .calcResultAmount {
-        font-size: 1.75rem;
-        /* Smaller font for result */
-    }
-
-    .hiddenCosts {
-        padding-top: 0.75rem;
-    }
-
-    .hiddenCosts h5 {
-        margin-bottom: 0.5rem;
-    }
-
-    .hiddenCostsGrid {
-        padding-bottom: 0.5rem;
-        /* Reduce bottom padding */
-    }
-
-    /* Adjust padding for the bottom bar */
-    .footer {
-        padding-bottom: 8rem;
-        /* Ensure footer content isn't hidden behind sticky CTA */
-    }
-
-    /* Hide desktop CTA buttons in hero if we have sticky bottom bar */
-    .heroCTA {
-        margin-bottom: 2rem;
-    }
-
-    .heroCTA .btnSecondary {
-        display: none;
-        /* Simplify to just one primary action in hero */
-    }
-}
-
-/* Hide Sticky CTA on Desktop */
-.mobileStickyCTA {
-    display: none;
-}
-
-
-/* Mobile Optimizations */
-@media (max-width: 768px) {
-
-    /* Navigation */
-    .nav {
-        padding: 1rem 1.25rem;
-    }
-
-    .hipaaBadge {
-        display: none;
-    }
-
-    .navPhoneText {
-        display: none;
-    }
-
-    .navPhone {
-        padding: 0.5rem;
-        background: rgba(20, 184, 166, 0.1);
-        border-radius: 8px;
-    }
-
-    .navPhone svg {
-        width: 20px;
-        height: 20px;
-    }
-
-    /* Hero Section */
-    .hero {
-        grid-template-columns: 1fr;
-        padding: 6rem 1.25rem 3rem;
-        gap: 3rem;
-        text-align: center;
-    }
-
-    .heroTitle {
-        font-size: 2.5rem;
-    }
-
-    .heroSubtitle {
-        font-size: 1rem;
-        margin: 0 auto 2rem;
-    }
-
-    .heroBullets {
-        grid-template-columns: 1fr;
-        text-align: left;
-        max-width: 320px;
-        margin: 0 auto 2rem;
-        gap: 1rem;
-    }
-
     .heroCTA {
         flex-direction: column;
         width: 100%;
     }
 
-    .btnPrimary,
-    .btnTrial {
+    .btnPrimary {
         width: 100%;
         justify-content: center;
     }
@@ -2322,12 +1641,6 @@
     .btnSecondary {
         width: 100%;
         justify-content: center;
-    }
-
-    .secondaryTrust {
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 1rem;
     }
 
     .trustBadges {
@@ -2341,21 +1654,10 @@
         gap: 0.75rem;
     }
 
-    /* Hero Visual */
-    .visualCard {
-        padding: 1rem;
-    }
-
-    .videoThumbnail {
-        padding: 1.5rem 1rem;
-    }
-
-    /* General Section Padding */
     .problem,
     .solution,
     .features,
     .testimonials,
-    .pricing,
     .faq {
         padding: 4rem 1.25rem;
         max-width: 100vw;
@@ -2366,7 +1668,6 @@
         font-size: 2rem;
     }
 
-    /* Problem Section - Horizontal Scroll */
     .problemColumns {
         display: flex;
         flex-direction: column;
@@ -2426,7 +1727,6 @@
         min-width: 280px;
     }
 
-    /* Solution Section */
     .solutionContent {
         grid-template-columns: 1fr;
         gap: 3rem;
@@ -2440,7 +1740,6 @@
         display: none;
     }
 
-    /* Features - Horizontal Scroll */
     .featureGrid {
         display: flex;
         overflow-x: auto;
@@ -2455,7 +1754,6 @@
         scroll-snap-align: center;
     }
 
-    /* Testimonials - Horizontal Scroll */
     .testimonialGrid {
         display: flex;
         overflow-x: auto;
@@ -2470,78 +1768,110 @@
         scroll-snap-align: center;
     }
 
-    /* Pricing */
-    .pricingGrid {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
+    .testimonialGrid::-webkit-scrollbar,
+    .featureGrid::-webkit-scrollbar,
+    .hiddenCostsGrid::-webkit-scrollbar {
+        display: none;
     }
 
-    /* Sticky CTA */
-    .stickyCTA {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: rgba(10, 10, 10, 0.95);
-        backdrop-filter: blur(12px);
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 1rem 1.25rem;
-        z-index: 9999;
-        /* Ensure it's on top of everything */
-        animation: slideUp 0.3s ease-out;
-        padding-bottom: env(safe-area-inset-bottom, 1rem);
-        /* Handle iPhone home bar */
-    }
-
-    .stickyCTAContent {
+    .hiddenCostsGrid {
         display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        max-width: 1200px;
-        margin: 0 auto;
-        padding-left: 3rem;
-        /* Avoid overlap with Next.js dev icon or other widgets */
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        gap: 0.5rem;
+        padding: 0.5rem 0;
+        scrollbar-width: none;
     }
 
-    .stickyCTAText {
-        display: flex;
+    .hiddenCostItem {
+        min-width: 140px;
+        scroll-snap-align: start;
         flex-direction: column;
+        text-align: center;
+        justify-content: center;
     }
 
-    .stickyCTALabel {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #fafafa;
+    .calculator {
+        padding: 1rem;
+        margin: 0 auto;
+        max-width: 100%;
+        width: 100%;
+        box-sizing: border-box;
+        overflow: hidden;
     }
 
-    .stickyCTASub {
-        font-size: 0.75rem;
-        color: #ef4444;
-    }
-
-    .btnSticky {
-        padding: 0.75rem 1.5rem;
-        background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
-        color: #ffffff;
-        font-weight: 600;
+    .calcTitle {
         font-size: 0.95rem;
+        margin-bottom: 1rem;
+    }
+
+    .calcSliders {
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .calcSliderGroup {
+        background: rgba(255, 255, 255, 0.03);
+        padding: 0.75rem;
         border-radius: 10px;
-        text-decoration: none;
-        white-space: nowrap;
+        gap: 0.25rem;
+        width: 100%;
+        box-sizing: border-box;
     }
 
-    @keyframes slideUp {
-        from {
-            transform: translateY(100%);
-        }
-
-        to {
-            transform: translateY(0);
-        }
+    .calcSliderHeader {
+        margin-bottom: 0.5rem;
     }
 
-    /* Hide particles on mobile */
+    .calcSliderHeader label {
+        font-size: 0.85rem;
+        color: #d4d4d8;
+    }
+
+    .calcSlider {
+        margin: 0.5rem 0;
+    }
+
+    .calcSlider::-webkit-slider-thumb {
+        width: 20px;
+        height: 20px;
+        background: #14b8a6;
+        box-shadow: 0 0 10px rgba(20, 184, 166, 0.4);
+    }
+
+    .calcSlider::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        background: #14b8a6;
+        box-shadow: 0 0 10px rgba(20, 184, 166, 0.4);
+    }
+
+    .calcResult {
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .calcResultAmount {
+        font-size: 1.75rem;
+    }
+
+    .ctaButtons {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .finalCTA {
+        padding: 2rem 1.25rem 3rem;
+    }
+
+    .ctaContent h2 {
+        font-size: 2rem;
+    }
+
+    .footer {
+        padding: 2rem 1.25rem;
+    }
+
     .particles {
         display: none;
     }
