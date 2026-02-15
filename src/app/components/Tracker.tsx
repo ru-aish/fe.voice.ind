@@ -27,12 +27,16 @@ import { useEffect, useRef, useCallback } from 'react';
 const TRACKING_ENDPOINT = '/api/tracking/event';
 const BATCH_INTERVAL = 3000;  // Send batched actions every 3 seconds
 const DEBUG = process.env.NODE_ENV === 'development';
+const MAX_QUEUE_SIZE = 500;
+const MAX_RETRY_ATTEMPTS = 3;
+const MAX_RETRY_DELAY_MS = 30000;
 
 // Action queue for batching
 interface QueuedAction {
     action: string;      // Action code (e.g., 'mic_start')
     t_ms: number;        // Milliseconds since session start
     extra?: string;      // Optional extra data
+    retryCount?: number; // Retry attempts for failed sends
 }
 
 // Global session start time - set once per module load, persists across Strict Mode re-renders
@@ -45,6 +49,41 @@ const externalActionQueue: QueuedAction[] = [];
 let externalFlushTimeout: ReturnType<typeof setTimeout> | null = null;
 let isExternalFlushing = false;
 let externalPagehideListenerAttached = false;
+let externalRetryDelayMs = BATCH_INTERVAL;
+
+function toTransportActions(actions: QueuedAction[]) {
+    return actions.map(({ action, t_ms, extra }) => ({ action, t_ms, extra }));
+}
+
+function trimQueue(queue: QueuedAction[], queueName: string): void {
+    if (queue.length <= MAX_QUEUE_SIZE) return;
+
+    const droppedCount = queue.length - MAX_QUEUE_SIZE;
+    queue.splice(0, droppedCount);
+
+    if (DEBUG) {
+        console.warn(`[Tracker] Dropped ${droppedCount} oldest ${queueName} actions (queue limit ${MAX_QUEUE_SIZE})`);
+    }
+}
+
+function enqueueWithLimit(queue: QueuedAction[], action: QueuedAction, queueName: string): void {
+    queue.push(action);
+    trimQueue(queue, queueName);
+}
+
+function requeueFailedWithLimit(queue: QueuedAction[], failedActions: QueuedAction[], queueName: string): void {
+    const retryable = failedActions
+        .map((action) => ({ ...action, retryCount: (action.retryCount ?? 0) + 1 }))
+        .filter((action) => action.retryCount <= MAX_RETRY_ATTEMPTS);
+
+    const droppedForRetries = failedActions.length - retryable.length;
+    if (droppedForRetries > 0 && DEBUG) {
+        console.warn(`[Tracker] Dropped ${droppedForRetries} ${queueName} actions after max retries`);
+    }
+
+    queue.unshift(...retryable);
+    trimQueue(queue, queueName);
+}
 
 async function flushExternalQueue(): Promise<void> {
     if (isExternalFlushing) return;
@@ -56,19 +95,27 @@ async function flushExternalQueue(): Promise<void> {
     try {
         const success = await sendActionsWithFetch(actionsToSend);
         if (!success) {
-            externalActionQueue.unshift(...actionsToSend);
+            requeueFailedWithLimit(externalActionQueue, actionsToSend, 'external');
+            externalRetryDelayMs = Math.min(externalRetryDelayMs * 2, MAX_RETRY_DELAY_MS);
+            scheduleExternalFlush(externalRetryDelayMs);
+            return;
+        }
+
+        externalRetryDelayMs = BATCH_INTERVAL;
+        if (externalActionQueue.length > 0) {
+            scheduleExternalFlush(BATCH_INTERVAL);
         }
     } finally {
         isExternalFlushing = false;
     }
 }
 
-function scheduleExternalFlush(): void {
+function scheduleExternalFlush(delayMs = BATCH_INTERVAL): void {
     if (externalFlushTimeout) return;
     externalFlushTimeout = setTimeout(async () => {
         externalFlushTimeout = null;
         await flushExternalQueue();
-    }, BATCH_INTERVAL);
+    }, delayMs);
 }
 
 function attachExternalPagehideFlush(): void {
@@ -105,7 +152,7 @@ async function sendActionsWithFetch(actions: QueuedAction[]): Promise<boolean> {
         const response = await fetch(TRACKING_ENDPOINT, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ actions }),
+            body: JSON.stringify({ actions: toTransportActions(actions) }),
             credentials: 'include'  // Include session cookies
         });
 
@@ -140,7 +187,7 @@ function sendActionsWithBeacon(actions: QueuedAction[]): boolean {
 
     // Use Blob with explicit Content-Type for proper server parsing
     const blob = new Blob(
-        [JSON.stringify({ actions })],
+        [JSON.stringify({ actions: toTransportActions(actions) })],
         { type: 'application/json' }
     );
     
@@ -180,11 +227,11 @@ export function Tracker() {
     const queueAction = useCallback((action: string, extra?: string) => {
         const t_ms = getTimestamp();
         
-        actionQueueRef.current.push({
+        enqueueWithLimit(actionQueueRef.current, {
             action,
             t_ms,
             extra
-        });
+        }, 'internal');
 
         if (DEBUG) {
             console.log(`[Tracker] ${formatTime(t_ms)} ${action}${extra ? ` (${extra})` : ''}`);
@@ -208,8 +255,7 @@ export function Tracker() {
         try {
             const success = await sendActionsWithFetch(actionsToSend);
             if (!success) {
-                // Re-queue failed actions at the front
-                actionQueueRef.current = [...actionsToSend, ...actionQueueRef.current];
+                requeueFailedWithLimit(actionQueueRef.current, actionsToSend, 'internal');
             }
         } finally {
             isFlushingRef.current = false;
@@ -377,7 +423,7 @@ export function Tracker() {
         const handleBeforeUnload = () => {
             // Add session_end to queue
             const t_ms = getTimestamp();
-            actionQueueRef.current.push({ action: 'session_end', t_ms });
+            enqueueWithLimit(actionQueueRef.current, { action: 'session_end', t_ms }, 'internal');
             
             // Use sendBeacon with proper Content-Type for reliable delivery on page exit
             if (actionQueueRef.current.length > 0) {
@@ -444,7 +490,7 @@ export function trackAction(action: string, extra?: string) {
         console.log(`[Tracker] ${formatTime(t_ms)} ${action}${extra ? ` (${extra})` : ''} [external]`);
     }
     
-    externalActionQueue.push({ action, t_ms, extra });
+    enqueueWithLimit(externalActionQueue, { action, t_ms, extra }, 'external');
     scheduleExternalFlush();
 }
 

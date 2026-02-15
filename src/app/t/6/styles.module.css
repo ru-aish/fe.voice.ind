@@ -6,7 +6,7 @@
   grid-template-columns: repeat(12, 1fr);
   grid-template-rows: repeat(12, 1fr);
   padding: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: Inter, sans-serif;
   border: 10px solid #000;
   box-sizing: border-box;
 }
@@ -115,5 +115,37 @@
 @media (prefers-reduced-motion: reduce) {
   .blink {
     animation: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .container {
+    min-height: auto;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
+  .titleBox,
+  .accentBox,
+  .animalBox,
+  .contentBox,
+  .ctaBox {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .titleBox,
+  .accentBox,
+  .ctaBox {
+    min-height: 160px;
+  }
+
+  .animalBox,
+  .contentBox {
+    min-height: 220px;
+  }
+
+  .title {
+    font-size: clamp(2.5rem, 14vw, 4.5rem);
   }
 }

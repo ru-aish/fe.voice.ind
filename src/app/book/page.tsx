@@ -407,7 +407,9 @@ export default function BookingPage() {
       {/* Footer */}
       <footer className={s.footer}>
         <div className={`${s.container} ${s.footerInner}`}>
-          <p className={s.footerCopy}>&copy; {new Date().getFullYear()} Elevix. All rights reserved.</p>
+          <p className={s.footerCopy}>
+            &copy; <span suppressHydrationWarning>{new Date().getFullYear()}</span> Elevix. All rights reserved.
+          </p>
           <div className={s.footerLinks}>
             <a href="/demo">Demo</a>
             <a href="mailto:query@elevix.site">query@elevix.site</a>

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Sora:wght@300;400;500;600;700&display=swap');
+@import "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Sora:wght@300;400;500;600;700&display=swap";
 
 .chromatic-fluid-container {
   --violet: #7c3aed;
@@ -11,10 +11,11 @@
   --surface-solid: #1a1a2e;
   --text: #f1f5f9;
   --text-muted: rgba(241, 245, 249, 0.6);
+
   min-height: 100vh;
   background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
   color: var(--text);
-  font-family: 'Outfit', sans-serif;
+  font-family: Outfit, sans-serif;
   overflow-x: hidden;
   position: relative;
 }
@@ -144,7 +145,7 @@
   border: none;
   color: white;
   padding: 16px 40px;
-  font-family: 'Outfit', sans-serif;
+  font-family: Outfit, sans-serif;
   font-weight: 600;
   font-size: 1rem;
   border-radius: 100px;
@@ -184,7 +185,7 @@
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: white;
   padding: 16px 40px;
-  font-family: 'Outfit', sans-serif;
+  font-family: Outfit, sans-serif;
   font-weight: 500;
   font-size: 1rem;
   border-radius: 100px;
@@ -321,7 +322,7 @@
 }
 
 .logoText {
-  font-family: 'Sora', sans-serif;
+  font-family: Sora, sans-serif;
   font-size: 1.5rem;
   font-weight: 700;
 }
@@ -408,7 +409,7 @@
 }
 
 .heroTitle {
-  font-family: 'Sora', sans-serif;
+  font-family: Sora, sans-serif;
   font-size: 2.75rem;
   font-weight: 700;
   line-height: 1.1;
@@ -594,7 +595,7 @@
 }
 
 .sectionTitle {
-  font-family: 'Sora', sans-serif;
+  font-family: Sora, sans-serif;
   font-size: 2.25rem;
   font-weight: 700;
   margin-bottom: 1rem;
@@ -706,7 +707,7 @@
 }
 
 .calculatorTitle {
-  font-family: 'Sora', sans-serif;
+  font-family: Sora, sans-serif;
   font-size: 1.25rem;
   font-weight: 600;
   margin-bottom: 2rem;
@@ -769,7 +770,7 @@
 }
 
 .resultValue {
-  font-family: 'Sora', sans-serif;
+  font-family: Sora, sans-serif;
   font-size: 2.5rem;
   font-weight: 700;
   background: linear-gradient(135deg, var(--coral), var(--pink));
@@ -802,7 +803,7 @@
 }
 
 .statValue {
-  font-family: 'Sora', sans-serif;
+  font-family: Sora, sans-serif;
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
@@ -905,7 +906,7 @@
 }
 
 .featureTitle {
-  font-family: 'Sora', sans-serif;
+  font-family: Sora, sans-serif;
   font-size: 1.125rem;
   font-weight: 600;
   margin-bottom: 0.75rem;
@@ -940,7 +941,7 @@
 }
 
 .testimonialMetric {
-  font-family: 'Sora', sans-serif;
+  font-family: Sora, sans-serif;
   font-size: 2.25rem;
   font-weight: 700;
   margin-bottom: 1rem;
@@ -983,7 +984,7 @@
 }
 
 .pricingValue {
-  font-family: 'Sora', sans-serif;
+  font-family: Sora, sans-serif;
   font-size: 3rem;
   font-weight: 700;
 }
@@ -1071,7 +1072,7 @@
 }
 
 .ctaTitle {
-  font-family: 'Sora', sans-serif;
+  font-family: Sora, sans-serif;
   font-size: 2.25rem;
   font-weight: 700;
   margin-bottom: 1rem;
@@ -1108,7 +1109,7 @@
 }
 
 .footerLogo {
-  font-family: 'Sora', sans-serif;
+  font-family: Sora, sans-serif;
   font-size: 1.25rem;
   font-weight: 700;
 }

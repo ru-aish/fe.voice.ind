@@ -100,7 +100,9 @@ export default function HomePage() {
 
   // Custom cursor (pointer:fine devices only)
   useEffect(() => {
-    if (!window.matchMedia('(pointer: fine)').matches) return;
+    const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!hasFinePointer || prefersReducedMotion) return;
 
     const dot = cursorDotRef.current;
     const outline = cursorOutlineRef.current;
@@ -138,7 +140,9 @@ export default function HomePage() {
 
   // Hover targets for cursor
   useEffect(() => {
-    if (!window.matchMedia('(pointer: fine)').matches) return;
+    const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!hasFinePointer || prefersReducedMotion) return;
     const page = pageRef.current;
     if (!page) return;
 
@@ -165,7 +169,7 @@ export default function HomePage() {
   }, []);
 
   // Calculator derived value
-  const annualLoss = Math.round(calls * (missRate / 100) * dealValue * 12);
+  const annualLoss = Math.round(calls * (missRate / 100) * dealValue * 365);
 
   return (
     <div ref={pageRef} className={`${s.page} ${cursorHover ? s.cursorHover : ''}`}>
@@ -230,21 +234,33 @@ export default function HomePage() {
               {/* Chain Reaction */}
               <div className={s.chainReaction}>
                 <h4 className={s.chainTitle}>The Domino Effect</h4>
-                {CHAIN_ITEMS.map((item, i) => (
-                  <div key={i} className={s.chainItem}>
-                    <button
-                      className={`${s.chainBtn} ${openChain === i ? s.chainBtnOpen : ''}`}
-                      onClick={() => setOpenChain(openChain === i ? null : i)}
-                      data-hover
-                    >
-                      <span>{item.title}</span>
-                      <span className={s.chainArrow}>&#9660;</span>
-                    </button>
-                    {openChain === i && (
-                      <div className={s.chainAnswer}>{item.content}</div>
-                    )}
-                  </div>
-                ))}
+                {CHAIN_ITEMS.map((item, i) => {
+                  const isOpen = openChain === i;
+                  const triggerId = `chain-trigger-${i}`;
+                  const panelId = `chain-panel-${i}`;
+
+                  return (
+                    <div key={i} className={s.chainItem}>
+                      <button
+                        type="button"
+                        id={triggerId}
+                        className={`${s.chainBtn} ${isOpen ? s.chainBtnOpen : ''}`}
+                        aria-expanded={isOpen}
+                        aria-controls={panelId}
+                        onClick={() => setOpenChain(isOpen ? null : i)}
+                        data-hover
+                      >
+                        <span>{item.title}</span>
+                        <span className={s.chainArrow}>&#9660;</span>
+                      </button>
+                      {isOpen && (
+                        <div id={panelId} role="region" aria-labelledby={triggerId} className={s.chainAnswer}>
+                          {item.content}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -255,17 +271,17 @@ export default function HomePage() {
                 <h4 className={s.calcBoxTitle}>Your Business&apos;s Lost Revenue</h4>
                 <div className={s.sliderGroup} data-hover>
                   <div className={s.sliderHeader}>
-                    <span>Total Calls / Month</span>
+                    <span>Calls / Day</span>
                     <span className={s.sliderValue}>{numFormat.format(calls)}</span>
                   </div>
                   <input
                     type="range"
-                    min={10}
-                    max={500}
+                    min={5}
+                    max={200}
                     value={calls}
                     onChange={(e) => setCalls(parseInt(e.target.value, 10))}
                     className={s.slider}
-                    aria-label="Total calls per month"
+                    aria-label="Calls per day"
                   />
                 </div>
 
@@ -505,21 +521,33 @@ export default function HomePage() {
           </h2>
 
           <div className={s.faqContainer}>
-            {FAQS.map((faq, i) => (
-              <div key={i} className={`${s.faqItem} ${s.reveal}`} style={{ transitionDelay: `${i * 0.04}s` }}>
-                <button
-                  className={s.faqButton}
-                  onClick={() => setActiveFaq(activeFaq === i ? null : i)}
-                  data-hover
-                >
-                  <span>{faq.q}</span>
-                  <span className={`${s.faqArrow} ${activeFaq === i ? s.faqArrowOpen : ''}`}>&#9660;</span>
-                </button>
-                {activeFaq === i && (
-                  <div className={s.faqAnswer}>{faq.a}</div>
-                )}
-              </div>
-            ))}
+            {FAQS.map((faq, i) => {
+              const isOpen = activeFaq === i;
+              const triggerId = `faq-trigger-${i}`;
+              const panelId = `faq-panel-${i}`;
+
+              return (
+                <div key={i} className={`${s.faqItem} ${s.reveal}`} style={{ transitionDelay: `${i * 0.04}s` }}>
+                  <button
+                    type="button"
+                    id={triggerId}
+                    className={s.faqButton}
+                    aria-expanded={isOpen}
+                    aria-controls={panelId}
+                    onClick={() => setActiveFaq(isOpen ? null : i)}
+                    data-hover
+                  >
+                    <span>{faq.q}</span>
+                    <span className={`${s.faqArrow} ${isOpen ? s.faqArrowOpen : ''}`}>&#9660;</span>
+                  </button>
+                  {isOpen && (
+                    <div id={panelId} role="region" aria-labelledby={triggerId} className={s.faqAnswer}>
+                      {faq.a}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </section>
 
