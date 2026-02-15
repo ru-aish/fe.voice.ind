@@ -188,10 +188,10 @@ export default function HomePage() {
                         key={i}
                         className={styles.particle}
                         style={{
-                            left: `${Math.random() * 100}%`,
-                            top: `${Math.random() * 100}%`,
-                            animationDelay: `${Math.random() * 20}s`,
-                            animationDuration: `${20 + Math.random() * 30}s`
+                            left: `${((i * 47) % 100)}%`,
+                            top: `${((i * 73) % 100)}%`,
+                            animationDelay: `${(i * 0.67) % 20}s`,
+                            animationDuration: `${20 + ((i * 17) % 30)}s`
                         }}
                     />
                 ))}
@@ -275,7 +275,7 @@ export default function HomePage() {
                                     key={i}
                                     className={styles.waveBar}
                                     style={{
-                                        height: `${20 + Math.sin(i * 0.5) * 30 + Math.random() * 20}px`,
+                                        height: `${20 + Math.sin(i * 0.5) * 30 + Math.sin(i * 1.3) * 10}px`,
                                         animationDelay: `${i * 0.05}s`
                                     }}
                                 />
@@ -783,7 +783,7 @@ export default function HomePage() {
 
             {/* Footer */}
             <footer className={styles.footer}>
-                <p>&copy; 2025 ElevixAI. All rights reserved.</p>
+                <p>&copy; {new Date().getFullYear()} ElevixAI. All rights reserved.</p>
             </footer>
         </div>
     );

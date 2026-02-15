@@ -55,23 +55,35 @@
   z-index: 10001;
 }
 @media (pointer: fine) {
-  .page { cursor: none; }
-  .page * { cursor: none; }
-  .cursorDot {
+  .page.useCustomCursor { cursor: none; }
+  .page.useCustomCursor * { cursor: none; }
+  .page.useCustomCursor .cursorDot {
     display: block; width: 8px; height: 8px;
     background-color: var(--accent);
     z-index: 10001;
     transition: width 0.2s, height 0.2s, background-color 0.2s;
   }
-  .cursorOutline {
+  .page.useCustomCursor .cursorOutline {
     display: block; width: 40px; height: 40px;
     border: 1px solid var(--accent);
     z-index: 10000;
     transition: transform 0.1s ease-out, width 0.2s, height 0.2s, background-color 0.2s, border-color 0.2s;
   }
 }
-.cursorHover .cursorDot { width: 4px; height: 4px; background-color: var(--bg-base); }
-.cursorHover .cursorOutline {
+@media (pointer: fine) and (prefers-reduced-motion: reduce) {
+  .page.useCustomCursor,
+  .page.useCustomCursor * { cursor: auto; }
+  .page.useCustomCursor .cursorDot,
+  .page.useCustomCursor .cursorOutline { display: none; }
+}
+@media (pointer: fine) and (forced-colors: active) {
+  .page.useCustomCursor,
+  .page.useCustomCursor * { cursor: auto; }
+  .page.useCustomCursor .cursorDot,
+  .page.useCustomCursor .cursorOutline { display: none; }
+}
+.page.useCustomCursor .cursorHover .cursorDot { width: 4px; height: 4px; background-color: var(--bg-base); }
+.page.useCustomCursor .cursorHover .cursorOutline {
   width: 45px; height: 45px;
   background-color: var(--accent);
   mix-blend-mode: difference;

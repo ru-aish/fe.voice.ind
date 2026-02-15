@@ -460,13 +460,14 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    min-height: 400px;
 }
 
 .calculator {
     background: linear-gradient(145deg, rgba(18, 18, 18, 0.95) 0%, rgba(8, 8, 8, 0.98) 100%);
     border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 20px;
-    padding: 2rem;
+    padding: 1.5rem;
     box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
     height: 100%;
     display: flex;
@@ -485,17 +486,6 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin-bottom: 1.25rem;
-}
-
-/* Chaos Story */
-.chaosStory {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 16px;
-    padding: 1.75rem;
-    margin-bottom: 1.5rem;
-    flex: 1;
-    min-height: 400px;
 }
 
 .chaosItem {
@@ -653,15 +643,6 @@
     font-size: 0.85rem;
     color: #71717a;
     line-height: 1.6;
-}
-
-/* Calculator */
-.calculator {
-    background: linear-gradient(145deg, rgba(18, 18, 18, 0.95) 0%, rgba(8, 8, 8, 0.98) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 20px;
-    padding: 1.5rem;
-    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
 }
 
 .calcTitle {

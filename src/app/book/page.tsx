@@ -122,7 +122,7 @@ export default function BookingPage() {
       setError('Name and email are required.');
       return;
     }
-    if (!email.includes('@') || !email.includes('.')) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError('Please enter a valid email address.');
       return;
     }

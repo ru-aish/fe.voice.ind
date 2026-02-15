@@ -22,7 +22,7 @@ export async function GET() {
       });
     }
 
-    const prompts = await Promise.all(
+    const results = await Promise.allSettled(
       mdFiles.map(async (file) => {
         const filePath = path.join(promptsDir, file);
         const content = await fs.readFile(filePath, 'utf-8');
@@ -36,6 +36,18 @@ export async function GET() {
         };
       })
     );
+
+    const prompts = results
+      .filter((result): result is PromiseFulfilledResult<{ id: string; title: string; filename: string; content: string }> => result.status === 'fulfilled')
+      .map(result => result.value);
+
+    const errors = results
+      .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
+      .map(result => result.reason);
+
+    if (errors.length > 0) {
+      console.warn('Failed to read some prompt files:', errors);
+    }
 
     return NextResponse.json({ prompts });
   } catch (error) {

@@ -168,6 +168,30 @@ export class TanzanianVisuals3D extends LitElement {
     if (this.onWindowResize) {
       window.removeEventListener('resize', this.onWindowResize);
     }
+
+    // Dispose scene objects to prevent memory leaks
+    this.scene.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        if (object.geometry) {
+          object.geometry.dispose();
+        }
+        if (object.material) {
+          if (Array.isArray(object.material)) {
+            object.material.forEach((material) => {
+              if (material.map) material.map.dispose();
+              material.dispose();
+            });
+          } else {
+            if (object.material.map) object.material.map.dispose();
+            object.material.dispose();
+          }
+        }
+      }
+    });
+
+    if (this.composer) {
+      this.composer.dispose();
+    }
     this.renderer.dispose();
     super.disconnectedCallback();
   }

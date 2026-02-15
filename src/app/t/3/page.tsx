@@ -66,9 +66,9 @@ export default function ChromaticFluidPage() {
           key={i}
           className={styles.particle}
           style={{
-            left: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 20}s`,
-            animationDuration: `${15 + Math.random() * 10}s`,
+            left: `${((i * 37) % 100)}%`,
+            animationDelay: `${(i * 0.8) % 20}s`,
+            animationDuration: `${15 + ((i * 13) % 10)}s`,
           }}
         />
       ))}
