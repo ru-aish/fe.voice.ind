@@ -40,14 +40,14 @@ export default function HomePage() {
         {
             name: "Rajesh Mehta",
             role: "CEO, TechScale Solutions",
-            quote: "We were losing 40% of leads because nobody picked up calls after hours. Ab har call attend hoti hai, and bookings are up 67%. Total game changer for our business.",
+            quote: "We were losing 40% of leads because nobody picked up calls after hours. Now every call is attended, and bookings are up 67%. Total game changer for our business.",
             metric: "67% more conversions",
             image: "/images/testimonials/michael.png"
         },
         {
             name: "Priya Sharma",
             role: "Operations Head, GrowthBox",
-            quote: "The AI handles inquiries, schedules demos, and follows up — sab kuch automatic. Our team now focuses only on closing deals instead of answering phones all day.",
+            quote: "The AI handles inquiries, schedules demos, and follows up — everything is automated. Our team now focuses only on closing deals instead of answering phones all day.",
             metric: "₹8L saved monthly",
             image: "/images/testimonials/sarah.png"
         },
@@ -138,9 +138,9 @@ export default function HomePage() {
         {
             icon: (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72" />
-                    <path d="M15 7a4 4 0 0 0-4 4" />
-                    <path d="M19 7a8 8 0 0 0-8 8" />
+                    <path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2" />
+                    <path d="M15 7a2 2 0 0 1 2 2" />
+                    <path d="M15 3a6 6 0 0 1 6 6" />
                 </svg>
             ),
             title: "Smart Call Routing",
@@ -151,19 +151,19 @@ export default function HomePage() {
     const faqs = [
         {
             question: "How natural does the AI voice sound?",
-            answer: "Our AI uses state-of-the-art voice synthesis tuned for natural conversation. In blind tests, 92% of callers couldn't tell they were speaking with an AI. The voice is warm, professional, and adapts its pace based on the caller's needs — Hindi, English, or Hinglish."
+            answer: "Our AI uses state-of-the-art voice synthesis tuned for natural conversation. In blind tests, 92% of callers couldn't tell they were speaking with an AI. The voice is warm, professional, and adapts its pace based on the caller's needs."
         },
         {
             question: "Can it handle complex scheduling with multiple team members?",
-            answer: "Bilkul. The AI integrates with your calendar to see real-time availability across all team members. It can match customers with specific people, handle recurring appointments, and respect your scheduling rules — sab automatically."
+            answer: "Absolutely. The AI integrates with your calendar to see real-time availability across all team members. It can match customers with specific people, handle recurring appointments, and respect your scheduling rules — all automatically."
         },
         {
             question: "What happens if a caller has an urgent issue?",
             answer: "The AI recognizes urgent situations and follows your defined escalation protocols. It can immediately transfer to on-call staff, take detailed messages for urgent callback, or provide emergency instructions as you configure."
         },
         {
-            question: "Kya yeh Hindi mein baat kar sakta hai?",
-            answer: "Haan, bilkul! Our AI supports Hindi, English, and Hinglish conversations naturally. It detects the caller's language preference and switches seamlessly — no awkward transitions."
+            question: "Can it speak multiple languages?",
+            answer: "Yes, absolutely! Our AI supports both English and Hindi conversations naturally. It detects the caller's language preference and switches seamlessly — no awkward transitions."
         },
         {
             question: "Will it integrate with our existing systems?",
@@ -231,7 +231,7 @@ export default function HomePage() {
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                 <path d="M9 12l2 2 4-4" />
                             </svg>
-                            <span>Sounds 100% Human — Bilkul Real Lagta Hai</span>
+                            <span>Sounds 100% Human — Totally Realistic</span>
                         </div>
                         <div className={styles.bulletItem}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -243,7 +243,7 @@ export default function HomePage() {
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                 <path d="M9 12l2 2 4-4" />
                             </svg>
-                            <span>48-Hour Setup — Hum Sab Karenge</span>
+                            <span>48-Hour Setup — We Handle Everything</span>
                         </div>
                         <div className={styles.bulletItem}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -296,7 +296,7 @@ export default function HomePage() {
             <section id="problem" data-animate data-track-view="v5_view_problem" className={`${styles.problem} ${isVisible['problem'] ? styles.visible : ''}`}>
                 <div className={styles.sectionHeader}>
                     <h2>The Hidden Cost of <span className={styles.highlightRed}>Missed Calls</span></h2>
-                    <p>Har ek missed call = ek customer jo competitor ke paas gaya</p>
+                    <p>Every missed call = a customer lost to a competitor</p>
                 </div>
 
                 <div className={styles.problemColumns}>
@@ -716,11 +716,23 @@ export default function HomePage() {
                 </div>
             </section>
 
+
+            {/* Pricing Section */}
+            <section id="pricing" data-animate data-track-view="v5_view_pricing" className={`${styles.pricing} ${isVisible['pricing'] ? styles.visible : ''}`}>
+                <div className={styles.pricingContent}>
+                    <div className={styles.pricingNote}>
+                        <span className={styles.pricingLabel}>Estimated Cost</span>
+                        <h3 className={styles.pricingValue}>₹5,000 - ₹30,000</h3>
+                        <p className={styles.pricingSubtext}>Most businesses fall within this range depending on requirements.</p>
+                    </div>
+                </div>
+            </section>
+
             {/* FAQ Section */}
             <section id="faq" data-animate data-track-view="v5_view_faq" className={`${styles.faq} ${isVisible['faq'] ? styles.visible : ''}`}>
                 <div className={styles.sectionHeader}>
                     <h2>Frequently Asked <span className={styles.highlight}>Questions</span></h2>
-                    <p>Sab kuch jaaniye ElevixAI ke baare mein</p>
+                    <p>Know everything about ElevixAI</p>
                 </div>
 
                 <div className={styles.faqContainer}>
@@ -750,7 +762,7 @@ export default function HomePage() {
             {/* Final CTA */}
             <section className={styles.finalCTA}>
                 <div className={styles.ctaContent}>
-                    <h2>Ready to Try? <span className={styles.highlight}>Abhi Baat Karo</span></h2>
+                    <h2>Ready to Try? <span className={styles.highlight}>Talk Now</span></h2>
                     <p>Experience firsthand how our AI handles conversations — ask anything.</p>
                     <div className={styles.ctaButtons}>
                         <a href="/demo" className={styles.btnPrimary} data-track="v5_cta_demo">
@@ -761,11 +773,11 @@ export default function HomePage() {
                                 <path d="M12 19v3" />
                             </svg>
                         </a>
-                        <a href="mailto:query@elevix.site" className={styles.btnSecondary} data-track="v5_cta_contact">
+                        <a href="mailto:query@elevix.site" className={styles.btnSecondary} data-track="v5_cta_contact" target="_blank" rel="noopener noreferrer">
                             Contact Us
                         </a>
                     </div>
-                    <p className={styles.ctaNote}>No signup required. Seedha baat karo.</p>
+                    <p className={styles.ctaNote}>No signup required. Talk directly.</p>
                 </div>
             </section>
 
