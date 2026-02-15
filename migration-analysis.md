@@ -119,7 +119,7 @@
 │       └── t/[sendId]/route.ts
 │
 ├── prompts/                            # AI prompt templates
-│   ├── generic.md                      # Generic sales prompt (main)
+│   ├── genric.md                       # Generic sales prompt (main)
 │   ├── claude_version.md
 │   ├── customer-support.md
 │   ├── default-assistant.md
@@ -257,16 +257,17 @@ export default function DemoPage() {
 ```json
 {
   "dependencies": {
-    "@deepgram/sdk": "^4.11.3",
-    "@lit/context": "^1.1.6",
+    "@deepgram/sdk": "^4.11.2",
+    "@lit/context": "^1.1.5",
     "@neondatabase/serverless": "^1.0.2",
-    "googleapis": "^171.4.0",
-    "lit": "^3.2.1",
-    "next": "^15.1.0",
-    "nodemailer": "^8.0.1",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "three": "^0.170.0"
+    "@vercel/postgres": "^0.10.0",
+    "better-sqlite3": "^12.5.0",
+    "lit": "^3.3.0",
+    "next": "^16.0.8",
+    "nodemailer": "^7.0.11",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "three": "^0.176.0"
   }
 }
 ```
@@ -350,7 +351,7 @@ fetch('/api/prompts');
 2. `src/app/lib/CalendarFunctions.ts` - Required for function calling
 3. `src/app/lib/storage.ts` - LocalStorage fallback
 4. `src/app/api/token/route.ts` - Deepgram token proxy
-5. `prompts/generic.md` - Main AI prompt
+5. `prompts/genric.md` - Main AI prompt
 
 #### For Landing Page
 1. `src/app/page.tsx` - Main landing page
@@ -369,8 +370,8 @@ fetch('/api/prompts');
 ### Dependencies to Install
 
 ```bash
-npm install @deepgram/sdk @neondatabase/serverless googleapis nodemailer
-npm install -D @types/nodemailer
+npm install @deepgram/sdk @neondatabase/serverless nodemailer better-sqlite3
+npm install -D @types/better-sqlite3 @types/nodemailer
 ```
 
 ### Environment Variables Required
@@ -438,7 +439,7 @@ DATABASE_URL=your_db_url
 1. **Sync AudioOrb3D** - Copy latest version from source
 2. **Copy API routes** - Start with `/api/token` and `/api/leads`
 3. **Copy lib files** - CalendarFunctions.ts, storage.ts
-4. **Copy prompts** - generic.md and others as needed
+4. **Copy prompts** - genric.md and others as needed
 5. **Copy landing page** - page.tsx, styles.module.css, logo.png
 6. **Copy public assets** - Images, videos, favicon
 7. **Install dependencies** - @deepgram/sdk, nodemailer, etc.

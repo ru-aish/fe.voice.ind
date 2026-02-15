@@ -12,6 +12,7 @@
     "@deepgram/sdk": "^4.11.3",
     "@lit/context": "^1.1.6",
     "@neondatabase/serverless": "^1.0.2",
+    "better-sqlite3": "^12.6.2",
     "googleapis": "^171.4.0",
     "lit": "^3.2.1",
     "next": "^15.1.0",
