@@ -171,7 +171,7 @@ export default function HomePage() {
         {/* ─── PROBLEM: CHAOS STORY ──────────────────────── */}
         <section className={s.problemSection}>
           <div className={s.problemGrid}>
-            <div className={s.reveal}>
+            <div className={`${s.problemContent} ${s.reveal}`}>
               <h3 className={s.columnLabel}>The Reality</h3>
               <h2 className={s.problemTitle}>
                 The Hidden Cost of<br /><span className={s.textDanger}>Missed Calls.</span>
@@ -223,7 +223,7 @@ export default function HomePage() {
             </div>
 
             {/* Right: Calculator */}
-            <div className={`${s.reveal}`} style={{ transitionDelay: '0.1s' }}>
+            <div className={`${s.calcColumn} ${s.reveal}`} style={{ transitionDelay: '0.1s' }}>
               <h3 className={s.columnLabel}>The Cost</h3>
               <div className={s.calcBox}>
                 <h4 className={s.calcBoxTitle}>Your Business&apos;s Lost Revenue</h4>
@@ -263,6 +263,14 @@ export default function HomePage() {
                 <div className={s.resultBox}>
                   <div className={s.resultLabel}>Revenue Lost Annually</div>
                   <div className={s.resultNumber}>{inrFormat.format(annualLoss)}</div>
+                </div>
+
+                {/* Monthly insight box */}
+                <div className={s.calcInsightBox}>
+                  <span className={s.calcInsightIcon}>!</span>
+                  <p className={s.calcInsightText}>
+                    That&apos;s <strong className={s.textAccent}>₹{numFormat.format(Math.round(annualLoss / 12))}</strong> lost every month
+                  </p>
                 </div>
 
                 {/* Hidden costs grid */}
