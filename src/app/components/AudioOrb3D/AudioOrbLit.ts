@@ -5,9 +5,8 @@ import './settings';
 import type { AgentSettings } from './settings';
 import { VoiceWebSocket } from '../../lib/voice-websocket';
 
-const getVoiceServerUrl = (): string => {
-  return process.env.NEXT_PUBLIC_VOICE_SERVER_URL || 'ws://localhost:8081/';
-};
+const LOCAL_VOICE_SERVER_URL = 'ws://localhost:8081/';
+const DEPLOYED_VOICE_SERVER_URL = process.env.NEXT_PUBLIC_VOICE_SERVER_URL || 'wss://voice-ind.onrender.com/';
 
 interface ReadyMessage {
   sessionId: string;
@@ -99,6 +98,7 @@ export class GdmLiveAudio extends LitElement {
   private isConnecting = false;
   private activeRequestId: number | null = null;
   private droppedRequestIds = new Set<number>();
+  private resolvedServerUrl: string | null = null;
 
   @state() declare currentSettings: AgentSettings;
 
@@ -547,16 +547,10 @@ export class GdmLiveAudio extends LitElement {
     }
 
     this.isConnecting = true;
+    const serverUrl = await this.resolveServerUrl();
 
     return new Promise((resolve, reject) => {
       try {
-        let serverUrl = '';
-        if (this.currentSettings.useDeployedServer && this.currentSettings.customServerUrl) {
-          serverUrl = this.currentSettings.customServerUrl;
-        } else {
-          serverUrl = getVoiceServerUrl();
-        }
-        
         this.infoLog(`[VoiceAI] Connecting to ${serverUrl}...`);
         this.debugLog('ws_connect_attempt', { serverUrl });
         this.voiceSocket = new VoiceWebSocket({
@@ -577,6 +571,7 @@ export class GdmLiveAudio extends LitElement {
             this.debugLog('ws_close', { code: event.code, reason: event.reason });
             this.isConnecting = false;
             this.sessionId = null;
+            this.resolvedServerUrl = null;
 
             if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
               this.updateStatus(`Connection lost. Reconnecting... (${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`);
@@ -593,6 +588,7 @@ export class GdmLiveAudio extends LitElement {
             this.errorLog('[VoiceAI] WebSocket error:', event);
             this.debugLog('ws_error', String((event as unknown as { type?: string })?.type || 'unknown'));
             this.isConnecting = false;
+            this.resolvedServerUrl = null;
             this.updateError('Connection error. Please check if the server is running.');
             reject(new Error('WebSocket error'));
           },
@@ -1011,6 +1007,74 @@ export class GdmLiveAudio extends LitElement {
     this.infoLog(`[VoiceAI][debug] ${line}`);
   }
 
+  private isLocalHostname(): boolean {
+    if (typeof window === 'undefined') return false;
+    const hostname = window.location.hostname;
+    return (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname.startsWith('192.168.') ||
+      hostname.endsWith('.local')
+    );
+  }
+
+  private canReachWebSocket(url: string, timeoutMs: number = 1200): Promise<boolean> {
+    return new Promise((resolve) => {
+      let settled = false;
+      let opened = false;
+      let socket: WebSocket | null = null;
+
+      const finish = (value: boolean) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        resolve(value);
+      };
+
+      const timeout = setTimeout(() => {
+        if (socket) socket.close();
+        finish(false);
+      }, timeoutMs);
+
+      try {
+        socket = new WebSocket(url);
+      } catch {
+        finish(false);
+        return;
+      }
+
+      socket.onopen = () => {
+        opened = true;
+        socket?.close(1000, 'probe complete');
+        finish(true);
+      };
+
+      socket.onerror = () => {
+        finish(false);
+      };
+
+      socket.onclose = () => {
+        if (!opened) {
+          finish(false);
+        }
+      };
+    });
+  }
+
+  private async resolveServerUrl(): Promise<string> {
+    if (this.currentSettings.useDeployedServer && this.currentSettings.customServerUrl) {
+      return this.currentSettings.customServerUrl;
+    }
+
+    if (this.resolvedServerUrl) {
+      return this.resolvedServerUrl;
+    }
+
+    const localAvailable = await this.canReachWebSocket(LOCAL_VOICE_SERVER_URL);
+    this.resolvedServerUrl = localAvailable ? LOCAL_VOICE_SERVER_URL : DEPLOYED_VOICE_SERVER_URL;
+    return this.resolvedServerUrl;
+  }
+
   private async ensureAudioWorkletLoaded() {
     if (this.workletLoaded) return;
     await this.inputAudioContext.audioWorklet.addModule('/worklets/pcm-capture-processor.js');
@@ -1135,6 +1199,7 @@ export class GdmLiveAudio extends LitElement {
     this.nextStartTime = 0;
     this.isUserSpeaking = false;
     this.sessionId = null;
+    this.resolvedServerUrl = null;
     this.resetCC();
     
     this.updateStatus('Session reset.');
@@ -1269,11 +1334,12 @@ export class GdmLiveAudio extends LitElement {
 
   render() {
     const isDevelopment = process.env.NODE_ENV === 'development';
+    const showSettingsButton = isDevelopment && this.isLocalHostname();
     const showDebugPanel = isDevelopment && this.currentSettings.showDebugLogs;
 
     return html`
       <div>
-        ${isDevelopment ? html`
+        ${showSettingsButton ? html`
           <button
             class="settings-btn"
             @click=${() => this.openSettings()}
