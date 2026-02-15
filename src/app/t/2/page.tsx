@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styles from './styles.module.css';
 
 export default function PaperMoonPage() {
@@ -8,6 +8,7 @@ export default function PaperMoonPage() {
   const [visibleSections, setVisibleSections] = useState<Set<string>>(new Set());
   const [stats, setStats] = useState({ calls: 50, value: 5000, missRate: 25 });
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -26,12 +27,17 @@ export default function PaperMoonPage() {
     return () => observer.disconnect();
   }, []);
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    setMousePos({
-      x: (e.clientX / window.innerWidth) * 100,
-      y: (e.clientY / window.innerHeight) * 100,
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (rafRef.current) return; // Skip if frame is pending
+    
+    rafRef.current = requestAnimationFrame(() => {
+      setMousePos({
+        x: (e.clientX / window.innerWidth) * 100,
+        y: (e.clientY / window.innerHeight) * 100,
+      });
+      rafRef.current = null;
     });
-  };
+  }, []);
 
   const features = [
     { icon: "◐", title: "Appointment Booking", desc: "Seamless scheduling. Real-time calendar sync. No conflicts, ever." },
@@ -125,7 +131,7 @@ export default function PaperMoonPage() {
         </div>
       </section>
 
-      <section id="problem" className={`${styles.section} ${styles[visibleSections.has('problem') ? 'fade-in visible' : 'fade-in']}`}>
+      <section id="problem" className={`${styles.section} ${styles['fade-in']} ${visibleSections.has('problem') ? styles.visible : ''}`}>
         <div className={styles.container}>
           <div className={styles.sectionHeader}>
             <span className={styles.sectionLabel}>The Problem</span>
@@ -208,7 +214,7 @@ export default function PaperMoonPage() {
         </div>
       </section>
 
-      <section id="solution" className={`${styles.section} ${styles.sectionAlt} ${styles[visibleSections.has('solution') ? 'fade-in visible' : 'fade-in']}`}>
+      <section id="solution" className={`${styles.section} ${styles.sectionAlt} ${styles['fade-in']} ${visibleSections.has('solution') ? styles.visible : ''}`}>
         <div className={styles.container}>
           <div className={styles.sectionHeader}>
             <span className={styles.sectionLabel}>The Solution</span>
@@ -257,7 +263,7 @@ export default function PaperMoonPage() {
         </div>
       </section>
 
-      <section id="features" className={`${styles.section} ${styles[visibleSections.has('features') ? 'fade-in visible' : 'fade-in']}`}>
+      <section id="features" className={`${styles.section} ${styles['fade-in']} ${visibleSections.has('features') ? styles.visible : ''}`}>
         <div className={styles.container}>
           <div className={styles.sectionHeader}>
             <span className={styles.sectionLabel}>Capabilities</span>
@@ -279,7 +285,7 @@ export default function PaperMoonPage() {
         </div>
       </section>
 
-      <section id="testimonials" className={`${styles.section} ${styles.sectionAlt} ${styles[visibleSections.has('testimonials') ? 'fade-in visible' : 'fade-in']}`}>
+      <section id="testimonials" className={`${styles.section} ${styles.sectionAlt} ${styles['fade-in']} ${visibleSections.has('testimonials') ? styles.visible : ''}`}>
         <div className={styles.container}>
           <div className={styles.sectionHeader}>
             <span className={styles.sectionLabel}>Testimonials</span>
@@ -306,7 +312,7 @@ export default function PaperMoonPage() {
         </div>
       </section>
 
-      <section id="pricing" className={`${styles.section} ${styles[visibleSections.has('pricing') ? 'fade-in visible' : 'fade-in']}`}>
+      <section id="pricing" className={`${styles.section} ${styles['fade-in']} ${visibleSections.has('pricing') ? styles.visible : ''}`}>
         <div className={styles.containerXs}>
           <span className={styles.sectionLabel}>Investment</span>
           <div className={`${styles.pricingCard} ${styles['ink-border']} ${styles['emboss-shadow']}`}>
@@ -317,7 +323,7 @@ export default function PaperMoonPage() {
         </div>
       </section>
 
-      <section id="faq" className={`${styles.section} ${styles.sectionAlt} ${styles[visibleSections.has('faq') ? 'fade-in visible' : 'fade-in']}`}>
+      <section id="faq" className={`${styles.section} ${styles.sectionAlt} ${styles['fade-in']} ${visibleSections.has('faq') ? styles.visible : ''}`}>
         <div className={styles.containerSm}>
           <div className={styles.sectionHeader}>
             <span className={styles.sectionLabel}>Questions</span>
@@ -361,7 +367,7 @@ export default function PaperMoonPage() {
       <footer className={styles.footer}>
         <div className={styles.footerContent}>
           <p className={`${styles.footerLogo} ${styles['serif-display']}`}>Elevix</p>
-          <p className={styles.footerText}>© 2025 ElevixAI. All rights reserved.</p>
+          <p className={styles.footerText}>© {new Date().getFullYear()} ElevixAI. All rights reserved.</p>
         </div>
       </footer>
     </div>

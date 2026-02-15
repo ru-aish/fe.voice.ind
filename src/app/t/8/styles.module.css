@@ -54,9 +54,10 @@
   border-radius: 50%;
   z-index: 10001;
 }
+/* Accessibility: Only hide native cursor when pointer is fine AND user has no reduced motion/contrast preferences */
 @media (pointer: fine) {
-  .page { cursor: none; }
-  .page * { cursor: none; }
+  .page.hideCursor { cursor: none; }
+  .page.hideCursor * { cursor: none; }
   .cursorDot {
     display: block; width: 8px; height: 8px;
     background-color: var(--accent);
@@ -68,6 +69,15 @@
     border: 1px solid var(--accent);
     z-index: 10000;
     transition: transform 0.1s ease-out, width 0.2s, height 0.2s, background-color 0.2s, border-color 0.2s;
+  }
+}
+
+/* Accessibility: Respect reduced motion and high contrast preferences - show native cursor */
+@media (prefers-reduced-motion: reduce), (prefers-contrast: more) {
+  .page { cursor: auto; }
+  .page * { cursor: auto; }
+  .cursorDot, .cursorOutline {
+    display: none !important;
   }
 }
 .cursorHover .cursorDot { width: 4px; height: 4px; background-color: var(--bg-base); }

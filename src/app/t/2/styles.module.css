@@ -774,7 +774,7 @@
 }
 
 .faqAnswer.open {
-  max-height: 10rem;
+  max-height: 50rem;
 }
 
 .faqAnswerText {

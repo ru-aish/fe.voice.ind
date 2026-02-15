@@ -151,7 +151,7 @@ export default function ChromaticFluidPage() {
         </div>
       </section>
 
-      <section id="problem" className={`${styles.section} ${styles[visibleSections.has('problem') ? 'fade-in visible' : 'fade-in']}`}>
+      <section id="problem" className={`${styles.section} ${styles['fade-in']}${visibleSections.has('problem') ? ' ' + styles.visible : ''}`}>
         <div className={styles.container}>
           <div className={styles.sectionHeader}>
             <span className={styles.sectionLabel}>The Problem</span>
@@ -235,7 +235,7 @@ export default function ChromaticFluidPage() {
         </div>
       </section>
 
-      <section id="solution" className={`${styles.section} ${styles.sectionAlt} ${styles[visibleSections.has('solution') ? 'fade-in visible' : 'fade-in']}`}>
+      <section id="solution" className={`${styles.section} ${styles.sectionAlt} ${styles['fade-in']}${visibleSections.has('solution') ? ' ' + styles.visible : ''}`}>
         <div className={styles.container}>
           <div className={styles.sectionHeader}>
             <span className={styles.sectionLabel}>The Solution</span>
@@ -283,7 +283,7 @@ export default function ChromaticFluidPage() {
         </div>
       </section>
 
-      <section id="features" className={`${styles.section} ${styles[visibleSections.has('features') ? 'fade-in visible' : 'fade-in']}`}>
+      <section id="features" className={`${styles.section} ${styles['fade-in']}${visibleSections.has('features') ? ' ' + styles.visible : ''}`}>
         <div className={styles.container}>
           <div className={styles.sectionHeader}>
             <span className={styles.sectionLabel}>Capabilities</span>
@@ -304,7 +304,7 @@ export default function ChromaticFluidPage() {
         </div>
       </section>
 
-      <section id="testimonials" className={`${styles.section} ${styles.sectionAlt} ${styles[visibleSections.has('testimonials') ? 'fade-in visible' : 'fade-in']}`}>
+      <section id="testimonials" className={`${styles.section} ${styles.sectionAlt} ${styles['fade-in']}${visibleSections.has('testimonials') ? ' ' + styles.visible : ''}`}>
         <div className={styles.container}>
           <div className={styles.sectionHeader}>
             <span className={styles.sectionLabel}>Results</span>
@@ -328,7 +328,7 @@ export default function ChromaticFluidPage() {
         </div>
       </section>
 
-      <section id="pricing" className={`${styles.section} ${styles[visibleSections.has('pricing') ? 'fade-in visible' : 'fade-in']}`}>
+      <section id="pricing" className={`${styles.section} ${styles['fade-in']}${visibleSections.has('pricing') ? ' ' + styles.visible : ''}`}>
         <div className={styles.containerXs}>
           <div className={styles.sectionHeader}>
             <span className={styles.sectionLabel}>Investment</span>
@@ -341,7 +341,7 @@ export default function ChromaticFluidPage() {
         </div>
       </section>
 
-      <section id="faq" className={`${styles.section} ${styles.sectionAlt} ${styles[visibleSections.has('faq') ? 'fade-in visible' : 'fade-in']}`}>
+      <section id="faq" className={`${styles.section} ${styles.sectionAlt} ${styles['fade-in']}${visibleSections.has('faq') ? ' ' + styles.visible : ''}`}>
         <div className={styles.containerSm}>
           <div className={styles.sectionHeader}>
             <span className={styles.sectionLabel}>FAQ</span>
@@ -389,7 +389,7 @@ export default function ChromaticFluidPage() {
       <footer className={styles.footer}>
         <div className={styles.footerContent}>
           <p className={`${styles.footerLogo} ${styles['gradient-text']}`}>Elevix</p>
-          <p className={styles.footerText}>© 2025 ElevixAI. All rights reserved.</p>
+          <p className={styles.footerText}>© {new Date().getFullYear()} ElevixAI. All rights reserved.</p>
         </div>
       </footer>
     </div>

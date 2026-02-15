@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import styles from './styles.module.css';
 
 export default function NeonShadowPage() {
@@ -8,6 +8,20 @@ export default function NeonShadowPage() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [visibleSections, setVisibleSections] = useState<Set<string>>(new Set());
   const [stats, setStats] = useState({ calls: 50, value: 5000, missRate: 25 });
+  const [isClient, setIsClient] = useState(false);
+
+  // Generate stable random particle positions to avoid hydration mismatch
+  const particleStyles = useMemo(() => {
+    return [...Array(20)].map(() => ({
+      left: `${Math.random() * 100}%`,
+      animationDelay: `${Math.random() * 15}s`,
+      animationDuration: `${15 + Math.random() * 10}s`
+    }));
+  }, []);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     const glitchInterval = setInterval(() => {
@@ -64,12 +78,8 @@ export default function NeonShadowPage() {
     <div className={styles['neon-shadow-container']}>
       <div className={styles.scanlines} />
       
-      {[...Array(20)].map((_, i) => (
-        <div key={i} className={styles['float-particle']} style={{ 
-          left: `${Math.random() * 100}%`, 
-          animationDelay: `${Math.random() * 15}s`,
-          animationDuration: `${15 + Math.random() * 10}s`
-        }} />
+      {isClient && particleStyles.map((style, i) => (
+        <div key={i} className={styles['float-particle']} style={style} />
       ))}
 
       <nav className={styles.nav}>
@@ -147,7 +157,7 @@ export default function NeonShadowPage() {
         </div>
       </section>
 
-      <section id="problem" className={`${styles.section} ${styles[visibleSections.has('problem') ? 'fade-in visible' : 'fade-in']}`}>
+      <section id="problem" className={`${styles.section} ${styles['fade-in']} ${visibleSections.has('problem') ? styles.visible : ''}`}>
         <div className={styles.container}>
           <div className={styles.sectionHeader}>
             <span className={`${styles.sectionLabel} ${styles.sectionLabelMagenta}`}>// THE_PROBLEM</span>
@@ -230,7 +240,7 @@ export default function NeonShadowPage() {
         </div>
       </section>
 
-      <section id="solution" className={`${styles.section} ${styles[visibleSections.has('solution') ? 'fade-in visible' : 'fade-in']}`}>
+      <section id="solution" className={`${styles.section} ${styles['fade-in']} ${visibleSections.has('solution') ? styles.visible : ''}`}>
         <div className={styles.heroGlow}>
           <div className={styles['glowOrb']} style={{ width: '600px', height: '600px', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'rgba(0, 255, 242, 0.03)' }} />
         </div>
@@ -291,7 +301,7 @@ export default function NeonShadowPage() {
         </div>
       </section>
 
-      <section id="features" className={`${styles.section} ${styles[visibleSections.has('features') ? 'fade-in visible' : 'fade-in']}`}>
+      <section id="features" className={`${styles.section} ${styles['fade-in']} ${visibleSections.has('features') ? styles.visible : ''}`}>
         <div className={styles.container}>
           <div className={styles.sectionHeader}>
             <span className={`${styles.sectionLabel} ${styles.sectionLabelMagenta}`}>// CAPABILITIES</span>
@@ -312,7 +322,7 @@ export default function NeonShadowPage() {
         </div>
       </section>
 
-      <section id="testimonials" className={`${styles.section} ${styles[visibleSections.has('testimonials') ? 'fade-in visible' : 'fade-in']}`}>
+      <section id="testimonials" className={`${styles.section} ${styles['fade-in']} ${visibleSections.has('testimonials') ? styles.visible : ''}`}>
         <div className={styles.container}>
           <div className={styles.sectionHeader}>
             <span className={`${styles.sectionLabel} ${styles.sectionLabelCyan}`}>// VERIFIED_RESULTS</span>
@@ -336,7 +346,7 @@ export default function NeonShadowPage() {
         </div>
       </section>
 
-      <section id="pricing" className={`${styles.section} ${styles[visibleSections.has('pricing') ? 'fade-in visible' : 'fade-in']}`}>
+      <section id="pricing" className={`${styles.section} ${styles['fade-in']} ${visibleSections.has('pricing') ? styles.visible : ''}`}>
         <div className={styles.containerXs}>
           <span className={`${styles.sectionLabel} ${styles.sectionLabelMagenta}`}>// INVESTMENT</span>
           <div className={`${styles.pricingCard} ${styles['neon-border']}`}>
@@ -347,7 +357,7 @@ export default function NeonShadowPage() {
         </div>
       </section>
 
-      <section id="faq" className={`${styles.section} ${styles[visibleSections.has('faq') ? 'fade-in visible' : 'fade-in']}`}>
+      <section id="faq" className={`${styles.section} ${styles['fade-in']} ${visibleSections.has('faq') ? styles.visible : ''}`}>
         <div className={styles.containerSm}>
           <div className={styles.sectionHeader}>
             <span className={`${styles.sectionLabel} ${styles.sectionLabelCyan}`}>// KNOWLEDGE_BASE</span>
@@ -395,7 +405,7 @@ export default function NeonShadowPage() {
 
       <footer className={styles.footer}>
         <div className={styles.footerContent}>
-          <p className={styles.footerText}>© 2025 ELEVIX_AI. All rights reserved.</p>
+          <p className={styles.footerText}>© {new Date().getFullYear()} ELEVIX_AI. All rights reserved.</p>
           <p className={styles.footerSubtext}>SYSTEM_STATUS: OPERATIONAL | REGION: US-EAST-1</p>
         </div>
       </footer>

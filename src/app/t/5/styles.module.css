@@ -69,6 +69,13 @@
   100% { transform: translate(-0.5px, 0.5px); }
 }
 
+/* Accessibility: Disable animation for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .animalPath {
+    animation: none;
+  }
+}
+
 .footer {
   text-align: center;
   z-index: 10;
@@ -92,6 +99,14 @@
   transform: translateY(-3px);
   background: #ff8800;
   box-shadow: 0 15px 30px rgba(255, 136, 0, 0.2);
+}
+
+.cta:focus-visible {
+  transform: translateY(-3px);
+  background: #ff8800;
+  box-shadow: 0 15px 30px rgba(255, 136, 0, 0.2);
+  outline: 2px solid #ff8800;
+  outline-offset: 4px;
 }
 
 .decoration {

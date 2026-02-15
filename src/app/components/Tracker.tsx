@@ -35,28 +35,25 @@ interface QueuedAction {
     extra?: string;      // Optional extra data
 }
 
-let actionQueue: QueuedAction[] = [];
-
-// Session start time (milliseconds)
-let sessionStartTime: number = 0;
-
-// Track if session_start has been sent
-let sessionStartSent = false;
+// Global session start time - set once per module load, persists across Strict Mode re-renders
+// This is intentional: we want a single session start time even in Strict Mode
+const globalSessionStartTime = Date.now();
 
 /**
- * Get current timestamp in milliseconds since session start
+ * Format milliseconds to MM:SS.mmm
  */
-function getTimestamp(): number {
-    if (!sessionStartTime) {
-        sessionStartTime = Date.now();
-    }
-    return Date.now() - sessionStartTime;
+function formatTime(ms: number): string {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    const millis = ms % 1000;
+    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${millis.toString().padStart(3, '0')}`;
 }
 
 /**
- * Send actions to tracking API
+ * Send actions to tracking API using fetch (for regular batch sends)
  */
-async function sendActions(actions: QueuedAction[]): Promise<boolean> {
+async function sendActionsWithFetch(actions: QueuedAction[]): Promise<boolean> {
     if (actions.length === 0) return true;
 
     try {
@@ -73,7 +70,7 @@ async function sendActions(actions: QueuedAction[]): Promise<boolean> {
         }
 
         if (DEBUG) {
-            console.log('[Tracker] Sent actions:', actions.map(a => 
+            console.log('[Tracker] Sent actions:', actions.map(a =>
                 `${formatTime(a.t_ms)} ${a.action}${a.extra ? ` (${a.extra})` : ''}`
             ));
         }
@@ -85,75 +82,109 @@ async function sendActions(actions: QueuedAction[]): Promise<boolean> {
 }
 
 /**
- * Format milliseconds to MM:SS.mmm
+ * Send actions using sendBeacon with proper Content-Type header
+ * Used for page unload and cleanup scenarios where fetch might be cancelled
  */
-function formatTime(ms: number): string {
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    const millis = ms % 1000;
-    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${millis.toString().padStart(3, '0')}`;
-}
-
-/**
- * Queue an action for sending
- */
-function queueAction(action: string, extra?: string) {
-    const t_ms = getTimestamp();
+function sendActionsWithBeacon(actions: QueuedAction[]): boolean {
+    if (actions.length === 0) return true;
     
-    actionQueue.push({
-        action,
-        t_ms,
-        extra
-    });
-
-    if (DEBUG) {
-        console.log(`[Tracker] ${formatTime(t_ms)} ${action}${extra ? ` (${extra})` : ''}`);
+    if (!navigator.sendBeacon) {
+        if (DEBUG) console.warn('[Tracker] sendBeacon not available');
+        return false;
     }
-}
 
-/**
- * Send an action immediately (for critical actions like form submit)
- */
-async function sendActionNow(action: string, extra?: string) {
-    const t_ms = getTimestamp();
+    // Use Blob with explicit Content-Type for proper server parsing
+    const blob = new Blob(
+        [JSON.stringify({ actions })],
+        { type: 'application/json' }
+    );
     
-    if (DEBUG) {
-        console.log(`[Tracker] ${formatTime(t_ms)} ${action}${extra ? ` (${extra})` : ''} [immediate]`);
+    const sent = navigator.sendBeacon(TRACKING_ENDPOINT, blob);
+    
+    if (DEBUG && sent) {
+        console.log('[Tracker] Sent via beacon:', actions.map(a =>
+            `${formatTime(a.t_ms)} ${a.action}${a.extra ? ` (${a.extra})` : ''}`
+        ));
     }
     
-    await sendActions([{ action, t_ms, extra }]);
+    return sent;
 }
 
 /**
  * Tracker Component
  */
 export function Tracker() {
+    // All state moved to refs to survive Strict Mode re-renders
+    const actionQueueRef = useRef<QueuedAction[]>([]);
+    const isFlushingRef = useRef(false);
     const batchIntervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
+    
+    // Persistent ref for session_start guard - survives Strict Mode re-renders
+    const sessionStartSentRef = useRef(false);
+    
+    // Track if this is the first mount (for Strict Mode compatibility)
+    const isMountedRef = useRef(false);
 
-    // Flush action queue
+    /**
+     * Get current timestamp in milliseconds since session start
+     */
+    const getTimestamp = useCallback((): number => {
+        return Date.now() - globalSessionStartTime;
+    }, []);
+
+    /**
+     * Queue an action for sending
+     */
+    const queueAction = useCallback((action: string, extra?: string) => {
+        const t_ms = getTimestamp();
+        
+        actionQueueRef.current.push({
+            action,
+            t_ms,
+            extra
+        });
+
+        if (DEBUG) {
+            console.log(`[Tracker] ${formatTime(t_ms)} ${action}${extra ? ` (${extra})` : ''}`);
+        }
+    }, [getTimestamp]);
+
+    /**
+     * Flush action queue with race condition guard
+     */
     const flushActions = useCallback(async () => {
-        if (actionQueue.length === 0) return;
+        // Guard against concurrent flush operations
+        if (isFlushingRef.current) return;
+        if (actionQueueRef.current.length === 0) return;
         
-        const actionsToSend = [...actionQueue];
-        actionQueue = [];
+        isFlushingRef.current = true;
         
-        const success = await sendActions(actionsToSend);
-        if (!success) {
-            // Re-queue failed actions
-            actionQueue = [...actionsToSend, ...actionQueue];
+        // Swap out the queue atomically
+        const actionsToSend = [...actionQueueRef.current];
+        actionQueueRef.current = [];
+        
+        try {
+            const success = await sendActionsWithFetch(actionsToSend);
+            if (!success) {
+                // Re-queue failed actions at the front
+                actionQueueRef.current = [...actionsToSend, ...actionQueueRef.current];
+            }
+        } finally {
+            isFlushingRef.current = false;
         }
     }, []);
 
     useEffect(() => {
-        // Initialize session
-        sessionStartTime = Date.now();
-        sessionStartSent = false;
+        // Strict Mode guard: only run session initialization once
+        if (isMountedRef.current) {
+            return;
+        }
+        isMountedRef.current = true;
 
-        // Record session start
-        if (!sessionStartSent) {
+        // Record session start only once (persists across Strict Mode re-renders)
+        if (!sessionStartSentRef.current) {
             queueAction('session_start');
-            sessionStartSent = true;
+            sessionStartSentRef.current = true;
         }
 
         // ========================================
@@ -228,17 +259,21 @@ export function Tracker() {
         };
 
         // ========================================
-        // Form Submit Tracking
+        // Form Submit Tracking - Use sendBeacon for reliability
         // ========================================
         const handleSubmit = (e: Event) => {
             const form = e.target as HTMLFormElement;
             const trackAttr = form.getAttribute('data-track');
+            const action = trackAttr || 'form_submit';
             
-            if (trackAttr) {
-                sendActionNow(trackAttr);  // Send immediately
-            } else {
-                sendActionNow('form_submit');
+            const t_ms = getTimestamp();
+            
+            if (DEBUG) {
+                console.log(`[Tracker] ${formatTime(t_ms)} ${action} [beacon - form submit]`);
             }
+            
+            // Use sendBeacon for reliable delivery during form navigation
+            sendActionsWithBeacon([{ action, t_ms }]);
         };
 
         // ========================================
@@ -304,14 +339,13 @@ export function Tracker() {
         // ========================================
         const handleBeforeUnload = () => {
             // Add session_end to queue
-            queueAction('session_end');
+            const t_ms = getTimestamp();
+            actionQueueRef.current.push({ action: 'session_end', t_ms });
             
-            // Use sendBeacon for reliable delivery on page exit
-            if (actionQueue.length > 0 && navigator.sendBeacon) {
-                navigator.sendBeacon(
-                    TRACKING_ENDPOINT,
-                    JSON.stringify({ actions: actionQueue })
-                );
+            // Use sendBeacon with proper Content-Type for reliable delivery on page exit
+            if (actionQueueRef.current.length > 0) {
+                sendActionsWithBeacon(actionQueueRef.current);
+                actionQueueRef.current = [];
             }
         };
 
@@ -325,7 +359,7 @@ export function Tracker() {
         window.addEventListener('beforeunload', handleBeforeUnload);
 
         // ========================================
-        // Cleanup
+        // Cleanup - Use synchronous sendBeacon
         // ========================================
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -344,10 +378,13 @@ export function Tracker() {
                 sectionObserver.disconnect();
             }
 
-            // Flush remaining actions
-            flushActions();
+            // Use synchronous sendBeacon for cleanup - async flush won't complete
+            if (actionQueueRef.current.length > 0) {
+                sendActionsWithBeacon(actionQueueRef.current);
+                actionQueueRef.current = [];
+            }
         };
-    }, [flushActions]);
+    }, [queueAction, getTimestamp, flushActions]);
 
     // This component renders nothing
     return null;
@@ -362,7 +399,15 @@ export function Tracker() {
  * trackAction('api_calendar', 'booking_request');
  */
 export function trackAction(action: string, extra?: string) {
-    queueAction(action, extra);
+    const t_ms = Date.now() - globalSessionStartTime;
+    
+    if (DEBUG) {
+        console.log(`[Tracker] ${formatTime(t_ms)} ${action}${extra ? ` (${extra})` : ''} [external]`);
+    }
+    
+    // For external calls, send immediately since we don't have access to the queue ref
+    // Use beacon for reliability
+    sendActionsWithBeacon([{ action, t_ms, extra }]);
 }
 
 /**
@@ -370,7 +415,13 @@ export function trackAction(action: string, extra?: string) {
  * Use for critical actions like form submissions
  */
 export function trackActionNow(action: string, extra?: string) {
-    sendActionNow(action, extra);
+    const t_ms = Date.now() - globalSessionStartTime;
+    
+    if (DEBUG) {
+        console.log(`[Tracker] ${formatTime(t_ms)} ${action}${extra ? ` (${extra})` : ''} [immediate/beacon]`);
+    }
+    
+    sendActionsWithBeacon([{ action, t_ms, extra }]);
 }
 
 // Legacy exports for backward compatibility
