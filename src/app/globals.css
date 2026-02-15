@@ -43,9 +43,9 @@
 }
 
 html, body {
-  height: 100dvh;
+  min-height: 100dvh;
   width: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 body {
@@ -53,9 +53,6 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   background: var(--color-bg);
   color: var(--color-text);
 }

@@ -33,14 +33,21 @@ export default function WaveVisualizer() {
       if (!canvas.parentElement) return;
       const width = canvas.parentElement.clientWidth;
       const height = canvas.parentElement.clientHeight;
+      
+      // Guard against invalid dimensions
+      if (width < 50 || height < 50) {
+        animationId = requestAnimationFrame(draw);
+        return;
+      }
+      
       const centerX = width / 2;
       const centerY = height / 2;
       
       ctx.clearRect(0, 0, width, height);
       
       const bars = 72;
-      const innerRadius = Math.min(width, height) * 0.18;
-      const outerRadius = Math.min(width, height) * 0.22;
+      const innerRadius = Math.max(20, Math.min(width, height) * 0.18);
+      const outerRadius = Math.max(25, Math.min(width, height) * 0.22);
       
       time += 0.03;
 
@@ -51,9 +58,10 @@ export default function WaveVisualizer() {
       ctx.lineWidth = 1;
       ctx.stroke();
 
-      // Inner ring
+      // Inner ring (ensure radius is never negative)
+      const innerRingRadius = Math.max(1, innerRadius - 2);
       ctx.beginPath();
-      ctx.arc(centerX, centerY, innerRadius - 2, 0, Math.PI * 2);
+      ctx.arc(centerX, centerY, innerRingRadius, 0, Math.PI * 2);
       ctx.strokeStyle = 'rgba(204, 255, 0, 0.08)';
       ctx.lineWidth = 0.5;
       ctx.stroke();
