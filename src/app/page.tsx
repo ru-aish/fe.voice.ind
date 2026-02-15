@@ -771,7 +771,7 @@ export default function HomePage() {
 
             {/* Footer */}
             <footer className={styles.footer}>
-                <p>&copy; 2025 ElevixAI. All rights reserved.</p>
+                <p>&copy; 2026 ElevixAI. All rights reserved.</p>
             </footer>
         </div>
     );

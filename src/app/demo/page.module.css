@@ -1,0 +1,32 @@
+.container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  background: #050505;
+}
+
+.homeButton {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'Instrument Sans', sans-serif;
+  color: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  letter-spacing: 0.01em;
+}
