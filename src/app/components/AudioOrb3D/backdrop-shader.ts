@@ -31,7 +31,7 @@ void main() {
   float factor = 4.;
   float d = factor * length(vUv);
   vec3 from = vec3(3.) / 255.;
-  vec3 to = vec3(16., 12., 20.) / 255.;
+  vec3 to = vec3(16., 12., 20.) / 2550.;
 
   fragmentColor = vec4(mix(from, to, d) + .005 * noise, 1.);
 }
