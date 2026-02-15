@@ -84,9 +84,9 @@
 
 /* === CONTAINER === */
 .container {
-  max-width: min(1400px, 100%);
+  max-width: min(1600px, 95%);
   margin: 0 auto;
-  padding: 0 clamp(0.75rem, 4vw, 4rem);
+  padding: 0 clamp(1rem, 2vw, 3rem);
   width: 100%;
   box-sizing: border-box;
 }
