@@ -1,790 +1,526 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
-import styles from './styles.module.css';
-import { trackAction } from './components/Tracker';
+import React, { useState, useEffect, useRef } from 'react';
+import s from './styles.module.css';
+import Hero from './components/landing/Hero/Hero';
 
+// ─── Data ────────────────────────────────────────────────────
+const FEATURES = [
+  { num: '01', title: 'Smart Appointment Booking', desc: 'Seamlessly integrates with your calendar. The AI checks real-time availability and blocks slots instantly without human intervention.', primary: true },
+  { num: '02', title: 'Instant Lead Capture', desc: 'Qualifies callers, extracts intent, and updates your CRM before you even wake up.' },
+  { num: '03', title: 'Automated Follow-ups', desc: 'Triggers WhatsApp/SMS flows immediately after the call concludes.' },
+  { num: '04', title: '24/7 Availability', desc: 'Weekends, holidays, 3 AM. Your business is always open for inquiries.' },
+  { num: '05', title: 'Human Handoff', desc: 'Recognizes complex queries and instantly routes them to human staff.' },
+];
+
+const TESTIMONIALS = [
+  { name: 'Rajesh Mehta', role: 'CEO, TechScale', quote: '67% more conversions. Every call answered. Total game changer.', metric: '+67%' },
+  { name: 'Priya Sharma', role: 'Ops Head, GrowthBox', quote: 'Automated everything. Team focuses on closing, not answering phones.', metric: '₹8L/mo' },
+  { name: 'Amit Verma', role: 'Founder, QuickServ', quote: '90% faster response. Best investment this year.', metric: '90%' },
+];
+
+const FAQS = [
+  { q: 'Can it handle angry customers?', a: 'Yes. The AI is trained to detect sentiment. If a caller seems frustrated or angry, it instantly de-escalates or routes the call to a human supervisor while flagging it as urgent.' },
+  { q: 'Does it sound robotic?', a: 'Not at all. We use advanced voice synthesis that includes natural pauses, "umms," and breathiness. In blind tests, 92% of callers did not realize they were speaking to an AI.' },
+  { q: 'What if the AI makes a mistake?', a: 'You have full control. Every call is transcribed and recorded. You can set strict guardrails for what the AI can and cannot say. If it\'s unsure, it\'s programmed to ask for clarification or transfer the call.' },
+  { q: 'How do I see the calls?', a: 'You get a real-time dashboard. See live transcripts, listen to recordings, and view analytics. You also get instant notifications via WhatsApp or Email for every booked lead.' },
+  { q: 'Is my data secure?', a: 'Absolutely. We use enterprise-grade encryption (AES-256) for all data. We are GDPR compliant and your customer data is never shared or used to train public models without consent.' },
+  { q: 'Can I customize the script?', a: 'Yes. You can provide your own scripts, FAQs, and business rules. The AI adapts to your specific brand tone—whether professional, friendly, or casual.' },
+  { q: 'How long does setup take?', a: 'Most businesses are fully operational within 48 hours. We handle the technical integration, train the AI on your specific services and policies, and provide a dedicated success manager.' },
+  { q: 'What\'s the pricing structure?', a: 'Pricing ranges from ₹5,000 to ₹30,000 per month based on your call volume and features required. Most small and mid-size businesses fall in the ₹8,000-₹15,000 range. All plans include unlimited calls and dedicated support.' },
+];
+
+const PRICING_FEATURES = [
+  '24/7 Voice Agent',
+  'Calendar Integration',
+  'CRM Sync',
+  'WhatsApp Follow-ups',
+  'Analytics Dashboard',
+  'Dedicated Manager',
+];
+
+const CHAOS_STORY = [
+  { time: '8:45 AM', text: 'New lead calls while you\'re in a meeting', tag: 'voicemail', icon: 'phone' },
+  { time: '9:15 AM', text: 'Customer needs urgent appointment today', tag: null, icon: 'alert' },
+  { time: '12:30 PM', text: 'You finally check voicemail during lunch', tag: null, icon: 'phone-check' },
+  { time: '12:45 PM', text: 'Call back — already went to competitor', tag: 'lost', icon: 'x' },
+];
+
+const CHAIN_ITEMS = [
+  { title: 'Empty Appointment Slots', content: 'Missed calls mean empty slots. With average lead values of ₹2,000-₹5,000, just 3 empty slots per day costs your business over ₹20 lakh annually in lost revenue.' },
+  { title: 'Leads Go to Competitors', content: 'When prospects can\'t reach you, they call the next business. 85% of callers won\'t leave a voicemail — they simply move on to someone who answers.' },
+  { title: 'Staff Burnout & Turnover', content: 'Your team shouldn\'t be receptionists. Juggling core work and phone calls leads to burnout, mistakes, and high turnover costs averaging ₹3-5 lakh per employee.' },
+];
+
+// ─── INR Formatter ───────────────────────────────────────────
+const inrFormat = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+const numFormat = new Intl.NumberFormat('en-IN');
+
+// ─── Component ───────────────────────────────────────────────
 export default function HomePage() {
-    const [openFaq, setOpenFaq] = useState<number | null>(null);
-    const [openChainItem, setOpenChainItem] = useState<number | null>(null);
-    const [isVisible, setIsVisible] = useState<Record<string, boolean>>({});
-    const observerRef = useRef<IntersectionObserver | null>(null);
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
-    const [calcValues, setCalcValues] = useState({
-        callsPerDay: 8,
-        dealValue: 4000,
-        missRate: 20
+  // Cursor state
+  const cursorDotRef = useRef<HTMLDivElement>(null);
+  const cursorOutlineRef = useRef<HTMLDivElement>(null);
+  const pageRef = useRef<HTMLDivElement>(null);
+  const [cursorHover, setCursorHover] = useState(false);
+
+  // Calculator state
+  const [calls, setCalls] = useState(45);
+  const [dealValue, setDealValue] = useState(2500);
+
+  // FAQ state
+  const [activeFaq, setActiveFaq] = useState<number | null>(null);
+  
+  // Chain reaction state
+  const [openChain, setOpenChain] = useState<number | null>(null);
+
+  // Scroll reveal
+  useEffect(() => {
+    const els = document.querySelectorAll(`.${s.reveal}`);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add(s.revealActive);
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -20px 0px' }
+    );
+    els.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  // Custom cursor (pointer:fine devices only)
+  useEffect(() => {
+    if (!window.matchMedia('(pointer: fine)').matches) return;
+
+    const dot = cursorDotRef.current;
+    const outline = cursorOutlineRef.current;
+    if (!dot || !outline) return;
+
+    const onMouseMove = (e: MouseEvent) => {
+      dot.style.left = `${e.clientX}px`;
+      dot.style.top = `${e.clientY}px`;
+      outline.animate(
+        { left: `${e.clientX}px`, top: `${e.clientY}px` },
+        { duration: 500, fill: 'forwards' }
+      );
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    return () => window.removeEventListener('mousemove', onMouseMove);
+  }, []);
+
+  // Hover targets for cursor
+  useEffect(() => {
+    if (!window.matchMedia('(pointer: fine)').matches) return;
+    const page = pageRef.current;
+    if (!page) return;
+    const targets = page.querySelectorAll('button, a, input[type="range"], input[type="text"], input[type="email"], input[type="tel"], textarea, [data-hover]');
+    const enter = () => setCursorHover(true);
+    const leave = () => setCursorHover(false);
+    targets.forEach((t) => {
+      t.addEventListener('mouseenter', enter);
+      t.addEventListener('mouseleave', leave);
     });
+    return () => {
+      targets.forEach((t) => {
+        t.removeEventListener('mouseenter', enter);
+        t.removeEventListener('mouseleave', leave);
+      });
+    };
+  }, []);
 
-    // Intersection Observer for scroll animations
-    useEffect(() => {
-        observerRef.current = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        setIsVisible((prev) => ({ ...prev, [entry.target.id]: true }));
-                    }
-                });
-            },
-            { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
-        );
+  // Calculator derived value
+  const annualLoss = calls * dealValue * 12;
 
-        const elements = document.querySelectorAll('[data-animate]');
-        elements.forEach((el) => observerRef.current?.observe(el));
+  return (
+    <div ref={pageRef} className={`${s.page} ${cursorHover ? s.cursorHover : ''}`}>
+      {/* Noise overlay */}
+      <div className={s.noise} />
 
-        return () => observerRef.current?.disconnect();
-    }, []);
+      {/* Custom cursor */}
+      <div ref={cursorDotRef} className={s.cursorDot} />
+      <div ref={cursorOutlineRef} className={s.cursorOutline} />
 
-    const testimonials = [
-        {
-            name: "Rajesh Mehta",
-            role: "CEO, TechScale Solutions",
-            quote: "We were losing 40% of leads because nobody picked up calls after hours. Now every call is attended, and bookings are up 67%. Total game changer for our business.",
-            metric: "67% more conversions",
-            image: "/images/testimonials/michael.png"
-        },
-        {
-            name: "Priya Sharma",
-            role: "Operations Head, GrowthBox",
-            quote: "The AI handles inquiries, schedules demos, and follows up — everything is automated. Our team now focuses only on closing deals instead of answering phones all day.",
-            metric: "₹8L saved monthly",
-            image: "/images/testimonials/sarah.png"
-        },
-        {
-            name: "Amit Verma",
-            role: "Founder, QuickServ India",
-            quote: "Customer complaints about wait times dropped 90%. The AI picks up instantly and resolves queries faster than any receptionist we ever hired. Best investment this year.",
-            metric: "90% faster response",
-            image: "/images/testimonials/james.png"
-        }
-    ];
+      <div className={s.container}>
+        {/* ─── NAV ─────────────────────────────────────── */}
+        <nav className={`${s.nav} ${s.reveal}`} data-hover>
+          <a href="/" className={s.logo}>Elevix.</a>
+          <div className={s.navRight}>
+            <div className={s.secureBadge}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                <path d="M9 12l2 2 4-4" />
+              </svg>
+              <span>Enterprise Secure</span>
+            </div>
+          </div>
+        </nav>
 
-    const features = [
-        {
-            icon: (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <rect x="3" y="4" width="18" height="18" rx="2" />
-                    <path d="M16 2v4M8 2v4M3 10h18" />
-                    <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" />
-                </svg>
-            ),
-            title: "Smart Appointment Booking",
-            description: "Customers book, reschedule, or cancel 24/7. Real-time calendar sync with your existing tools — no double bookings, ever."
-        },
-        {
-            icon: (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M9 12l2 2 4-4" />
-                    <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />
-                </svg>
-            ),
-            title: "Instant Query Resolution",
-            description: "Answers FAQs about your services, pricing, hours, and availability — no human needed. Customers get instant help."
-        },
-        {
-            icon: (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-            ),
-            title: "Lead Capture & Qualification",
-            description: "Captures caller details, qualifies leads based on your criteria, and sends them straight to your CRM automatically."
-        },
-        {
-            icon: (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                </svg>
-            ),
-            title: "Automated Follow-ups",
-            description: "Sends reminders, confirmation messages, and follow-up calls automatically. Reduces no-shows and keeps customers engaged."
-        },
-        {
-            icon: (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                </svg>
-            ),
-            title: "Natural Voice Conversations",
-            description: "Sounds 100% human. Callers can't tell it's AI — warm, natural, and adapts to conversation flow in real-time."
-        },
-        {
-            icon: (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                    <path d="m15 5 4 4" />
-                </svg>
-            ),
-            title: "Reschedule & Cancel",
-            description: "Customers manage their own appointments easily, freeing your staff for high-value work that actually needs a human."
-        },
-        {
-            icon: (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 16v-4" />
-                    <path d="M12 8h.01" />
-                </svg>
-            ),
-            title: "Business Information",
-            description: "Answers questions about services, locations, hours, directions, and what to expect — like your best receptionist, but 24/7."
-        },
-        {
-            icon: (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2" />
-                    <path d="M15 7a2 2 0 0 1 2 2" />
-                    <path d="M15 3a6 6 0 0 1 6 6" />
-                </svg>
-            ),
-            title: "Smart Call Routing",
-            description: "Identifies urgent situations and routes them to the right person instantly. No important call ever gets lost."
-        }
-    ];
+        {/* ─── HERO (Refactored Component) ────────────────── */}
+        <Hero revealClass={s.reveal} />
 
-    const faqs = [
-        {
-            question: "How natural does the AI voice sound?",
-            answer: "Our AI uses state-of-the-art voice synthesis tuned for natural conversation. In blind tests, 92% of callers couldn't tell they were speaking with an AI. The voice is warm, professional, and adapts its pace based on the caller's needs."
-        },
-        {
-            question: "Can it handle complex scheduling with multiple team members?",
-            answer: "Absolutely. The AI integrates with your calendar to see real-time availability across all team members. It can match customers with specific people, handle recurring appointments, and respect your scheduling rules — all automatically."
-        },
-        {
-            question: "What happens if a caller has an urgent issue?",
-            answer: "The AI recognizes urgent situations and follows your defined escalation protocols. It can immediately transfer to on-call staff, take detailed messages for urgent callback, or provide emergency instructions as you configure."
-        },
-        {
-            question: "Can it speak multiple languages?",
-            answer: "Yes, absolutely! Our AI supports both English and Hindi conversations naturally. It detects the caller's language preference and switches seamlessly — no awkward transitions."
-        },
-        {
-            question: "Will it integrate with our existing systems?",
-            answer: "We integrate with all major CRMs, calendar systems, and business tools — Zoho, Google Workspace, HubSpot, and more. Setup is seamless and bi-directional, so changes made anywhere are reflected everywhere."
-        },
-        {
-            question: "How long does setup take?",
-            answer: "Most businesses are fully operational within 2-3 hours. We handle the technical integration, train the AI on your specific services and policies, and provide a dedicated success manager for the first 30 days."
-        },
-        {
-            question: "Can we customize the AI's responses?",
-            answer: "Absolutely. You control the greeting, personality, and specific responses for your business. Want the AI to mention your specialties, promote new offers, or follow specific scripts? It's all customizable through our dashboard."
-        }
-    ];
-
-    return (
-        <div className={styles.container}>
-            {/* Floating Particles */}
-            <div className={styles.particles}>
-                {[...Array(30)].map((_, i) => (
-                    <div
-                        key={i}
-                        className={styles.particle}
-                        style={{
-                            left: `${Math.random() * 100}%`,
-                            top: `${Math.random() * 100}%`,
-                            animationDelay: `${Math.random() * 20}s`,
-                            animationDuration: `${20 + Math.random() * 30}s`
-                        }}
-                    />
+        {/* ─── PROBLEM: CHAOS STORY ──────────────────────── */}
+        <section className={s.problemSection}>
+          <div className={s.problemGrid}>
+            <div className={s.reveal}>
+              <h3 className={s.columnLabel}>The Reality</h3>
+              <h2 className={s.problemTitle}>
+                The Hidden Cost of<br /><span className={s.textDanger}>Missed Calls.</span>
+              </h2>
+              <p className={s.problemDesc}>
+                Every unanswered call is a customer choosing your competitor.
+              </p>
+              
+              {/* Chaos Timeline */}
+              <div className={s.chaosTimeline}>
+                {CHAOS_STORY.map((item, i) => (
+                  <div key={i} className={s.chaosItem}>
+                    <div className={s.chaosTime}>{item.time}</div>
+                    <div className={s.chaosDot} />
+                    <div className={s.chaosContent}>
+                      <span>{item.text}</span>
+                      {item.tag && <span className={`${s.chaosTag} ${item.tag === 'lost' ? s.chaosTagDanger : ''}`}>{item.tag}</span>}
+                    </div>
+                  </div>
                 ))}
+                <div className={`${s.chaosItem} ${s.chaosItemResult}`}>
+                  <div className={s.chaosTime}>Result</div>
+                  <div className={`${s.chaosDot} ${s.chaosDotDanger}`} />
+                  <div className={s.chaosContent}>
+                    <span className={s.textDanger}>-₹2,500+ lifetime customer value lost</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Chain Reaction */}
+              <div className={s.chainReaction}>
+                <h4 className={s.chainTitle}>The Domino Effect</h4>
+                {CHAIN_ITEMS.map((item, i) => (
+                  <div key={i} className={s.chainItem}>
+                    <button
+                      className={`${s.chainBtn} ${openChain === i ? s.chainBtnOpen : ''}`}
+                      onClick={() => setOpenChain(openChain === i ? null : i)}
+                      data-hover
+                    >
+                      <span>{item.title}</span>
+                      <span className={s.chainArrow}>&#9660;</span>
+                    </button>
+                    {openChain === i && (
+                      <div className={s.chainAnswer}>{item.content}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Navigation */}
-            <nav className={styles.nav}>
-                <div className={styles.logo}>
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                    </svg>
-                    <span>ElevixAI</span>
+            {/* Right: Calculator */}
+            <div className={`${s.reveal}`} style={{ transitionDelay: '0.1s' }}>
+              <h3 className={s.columnLabel}>The Cost</h3>
+              <div className={s.calcBox}>
+                <h4 className={s.calcBoxTitle}>Your Business&apos;s Lost Revenue</h4>
+                <div className={s.sliderGroup} data-hover>
+                  <div className={s.sliderHeader}>
+                    <span>Missed Calls / Month</span>
+                    <span className={s.sliderValue}>{numFormat.format(calls)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={10}
+                    max={200}
+                    value={calls}
+                    onChange={(e) => setCalls(parseInt(e.target.value))}
+                    className={s.slider}
+                    aria-label="Missed calls per month"
+                  />
                 </div>
-                <div className={styles.navRight}>
-                    <div className={styles.secureBadge}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                            <path d="M9 12l2 2 4-4" />
-                        </svg>
-                        Enterprise Secure
+
+                <div className={s.sliderGroup} data-hover>
+                  <div className={s.sliderHeader}>
+                    <span>Avg. Value per Lead (₹)</span>
+                    <span className={s.sliderValue}>{numFormat.format(dealValue)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={500}
+                    max={10000}
+                    step={500}
+                    value={dealValue}
+                    onChange={(e) => setDealValue(parseInt(e.target.value))}
+                    className={s.slider}
+                    aria-label="Average value per lead"
+                  />
+                </div>
+
+                <div className={s.resultBox}>
+                  <div className={s.resultLabel}>Revenue Lost Annually</div>
+                  <div className={s.resultNumber}>{inrFormat.format(annualLoss)}</div>
+                </div>
+
+                {/* Hidden costs grid */}
+                <div className={s.hiddenCosts}>
+                  <h5 className={s.hiddenCostsTitle}>Additional Costs You&apos;re Paying</h5>
+                  <div className={s.hiddenCostsGrid}>
+                    <div className={s.hiddenCostItem}>
+                      <span className={s.hiddenCostLabel}>Front Desk</span>
+                      <span className={s.hiddenCostValue}>₹4.2L</span>
                     </div>
-                </div>
-            </nav>
-
-            {/* Hero Section */}
-            <section className={styles.hero} data-track-view="v5_view_hero">
-                <div className={styles.heroContent}>
-                    <div className={styles.badge}>AI-Powered Voice Agent</div>
-                    <h1 className={styles.heroTitle}>
-                        Stop Losing <span className={styles.highlight}>₹50,000+</span> <br />
-                        Every Month to Missed Calls
-                    </h1>
-
-                    {/* Key Benefits Bullets */}
-                    <div className={styles.heroBullets}>
-                        <div className={styles.bulletItem}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <path d="M9 12l2 2 4-4" />
-                            </svg>
-                            <span>Sounds 100% Human — Totally Realistic</span>
-                        </div>
-                        <div className={styles.bulletItem}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <path d="M9 12l2 2 4-4" />
-                            </svg>
-                            <span>Books Appointments Instantly — 24/7</span>
-                        </div>
-                        <div className={styles.bulletItem}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <path d="M9 12l2 2 4-4" />
-                            </svg>
-                            <span>48-Hour Setup — We Handle Everything</span>
-                        </div>
-                        <div className={styles.bulletItem}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <path d="M9 12l2 2 4-4" />
-                            </svg>
-                            <span>No Lock-in, Cancel Anytime</span>
-                        </div>
+                    <div className={s.hiddenCostItem}>
+                      <span className={s.hiddenCostLabel}>No-Shows</span>
+                      <span className={s.hiddenCostValue}>₹2.1L</span>
                     </div>
-
-                    <div className={styles.heroCTA}>
-                        <a href="/demo" className={styles.btnPrimary} data-track="v5_hero_demo">
-                            Try Live Demo
-                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                <path d="M4 10H16M16 10L11 5M16 10L11 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                        </a>
+                    <div className={s.hiddenCostItem}>
+                      <span className={s.hiddenCostLabel}>After-Hours</span>
+                      <span className={s.hiddenCostValue}>₹2.8L</span>
                     </div>
-
-                    <div className={styles.trustBadges}>
-                    </div>
+                  </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-                {/* Hero Visual - Waveform Animation */}
-                <div className={styles.heroVisual}>
-                    <div className={styles.visualCard}>
-                        <div className={styles.waveform}>
-                            {[...Array(40)].map((_, i) => (
-                                <div
-                                    key={i}
-                                    className={styles.waveBar}
-                                    style={{
-                                        height: `${20 + Math.sin(i * 0.5) * 30 + Math.random() * 20}px`,
-                                        animationDelay: `${i * 0.05}s`
-                                    }}
-                                />
-                            ))}
-                        </div>
-                        <div className={styles.visualText}>
-                            <div className={styles.liveIndicator}>
-                                <span className={styles.liveDot}></span>
-                                LIVE
-                            </div>
-                            <p>&quot;Hi, I want to book an appointment for tomorrow...&quot;</p>
-                        </div>
-                    </div>
+        {/* ─── SOLUTION ────────────────────────────────── */}
+        <section className={s.solutionSection}>
+          <h2 className={`${s.sectionTitle} ${s.reveal}`}>
+            Your 24/7<br /><span className={s.textAccent}>AI Receptionist.</span>
+          </h2>
+          <p className={`${s.sectionSubtitle} ${s.reveal}`}>
+            Answers every call instantly. Books appointments. Resolves queries. Captures leads. Sounds 100% human.
+          </p>
+
+          <div className={`${s.statsGrid} ${s.reveal}`}>
+            {[
+              { value: '<500ms', label: 'Response Time' },
+              { value: '24/7', label: 'Availability' },
+              { value: '92%', label: 'Human Rating' },
+            ].map((stat) => (
+              <div key={stat.label} className={s.statCard} data-hover>
+                <div className={s.statValue}>{stat.value}</div>
+                <div className={s.statLabel}>{stat.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Conversation Log with Before/After layout */}
+          <div className={`${s.conversationLog} ${s.reveal}`}>
+            <div className={s.convoHeader}>
+              <div className={s.convoDot} />
+              <span className={s.convoLabel}>Live Communication Log</span>
+            </div>
+            
+            {/* Caller messages on the RIGHT, AI on the LEFT */}
+            <div className={s.convoMessages}>
+              <div className={`${s.messageRow} ${s.messageRight}`}>
+                <div className={s.messageBubble}>
+                  <span className={s.msgTag}>[CALLER]</span>
+                  <span>&quot;Hi, I need to book an appointment for tomorrow...&quot;</span>
                 </div>
-            </section>
-
-            {/* Problem Section - Two Column Layout */}
-            <section id="problem" data-animate data-track-view="v5_view_problem" className={`${styles.problem} ${isVisible['problem'] ? styles.visible : ''}`}>
-                <div className={styles.sectionHeader}>
-                    <h2>The Hidden Cost of <span className={styles.highlightRed}>Missed Calls</span></h2>
-                    <p>Every missed call = a customer lost to a competitor</p>
+              </div>
+              <div className={`${s.messageRow} ${s.messageLeft}`}>
+                <div className={s.messageBubble}>
+                  <span className={s.msgTagAI}>[AI]</span>
+                  <span>&quot;Of course! I have openings at 11 AM and 3 PM. Which works better?&quot;</span>
+                  <span className={s.msgLatency}>380ms</span>
                 </div>
-
-                <div className={styles.problemColumns}>
-                    {/* Left Column - The Reality */}
-                    <div className={styles.problemLeft}>
-                        <h3 className={styles.columnTitle}>The Reality</h3>
-
-                        <div className={styles.chaosStory}>
-                            <div className={styles.chaosItem}>
-                                <div className={styles.chaosIcon}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72" />
-                                    </svg>
-                                </div>
-                                <div className={styles.chaosContent}>
-                                    <span className={styles.chaosTime}>9:30 AM</span>
-                                    <p>Customer calls during a meeting <span className={styles.chaosRed}>(voicemail)</span></p>
-                                </div>
-                            </div>
-
-                            <div className={styles.chaosConnector}></div>
-
-                            <div className={styles.chaosItem}>
-                                <div className={styles.chaosIcon}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <circle cx="12" cy="12" r="10" />
-                                        <path d="M8 15h8M9 9h.01M15 9h.01" />
-                                    </svg>
-                                </div>
-                                <div className={styles.chaosContent}>
-                                    <span className={styles.chaosTime}>10:15 AM</span>
-                                    <p>Customer needs urgent help — ready to pay</p>
-                                </div>
-                            </div>
-
-                            <div className={styles.chaosConnector}></div>
-
-                            <div className={styles.chaosItem}>
-                                <div className={styles.chaosIcon}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <rect x="5" y="2" width="14" height="20" rx="2" />
-                                        <path d="M12 18h.01" />
-                                    </svg>
-                                </div>
-                                <div className={styles.chaosContent}>
-                                    <span className={styles.chaosTime}>1:00 PM</span>
-                                    <p>You finally check missed calls during lunch</p>
-                                </div>
-                            </div>
-
-                            <div className={styles.chaosConnector}></div>
-
-                            <div className={styles.chaosItem}>
-                                <div className={styles.chaosIcon}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2" />
-                                        <line x1="1" y1="1" x2="23" y2="23" />
-                                    </svg>
-                                </div>
-                                <div className={styles.chaosContent}>
-                                    <span className={styles.chaosTime}>1:30 PM</span>
-                                    <p>Call back — <span className={styles.chaosRed}>already went to competitor</span></p>
-                                </div>
-                            </div>
-
-                            <div className={styles.chaosConnector}></div>
-
-                            <div className={`${styles.chaosItem} ${styles.chaosItemLoss}`}>
-                                <div className={styles.chaosIcon}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <line x1="12" y1="1" x2="12" y2="23" />
-                                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                                    </svg>
-                                </div>
-                                <div className={styles.chaosContent}>
-                                    <span className={styles.chaosTime}>Result</span>
-                                    <p className={styles.chaosLossText}>-₹50,000+ lifetime customer value lost</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Chain Reaction Accordion */}
-                        <div className={styles.chainReaction}>
-                            <h4 className={styles.chainTitle}>The Domino Effect</h4>
-
-                            {[
-                                {
-                                    title: "Empty Calendar Slots",
-                                    content: "Missed calls mean empty time slots. With average deal values of ₹5,000-50,000, just 2 missed opportunities per day costs your business over ₹25 lakhs annually in lost revenue."
-                                },
-                                {
-                                    title: "Customers Go to Competitors",
-                                    content: "When customers can't reach you, they call the next business. 85% of callers won't leave a voicemail — they simply move on to someone who picks up."
-                                },
-                                {
-                                    title: "Team Burnout & Turnover",
-                                    content: "Your team shouldn't be answering phones all day. Juggling core work and phone calls leads to burnout, mistakes, and high turnover costs averaging ₹1.5L per employee."
-                                }
-                            ].map((item, index) => (
-                                <div key={index} className={styles.chainItem}>
-                                    <button
-                                        className={`${styles.chainQuestion} ${openChainItem === index ? styles.chainOpen : ''}`}
-                                        onClick={() => {
-                                            const isOpening = openChainItem !== index;
-                                            trackAction(isOpening ? 'v5_chain_open' : 'v5_chain_close', item.title);
-                                            setOpenChainItem(openChainItem === index ? null : index);
-                                        }}
-                                    >
-                                        <span>{item.title}</span>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </button>
-                                    <div className={`${styles.chainAnswer} ${openChainItem === index ? styles.chainAnswerOpen : ''}`}>
-                                        <p>{item.content}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Right Column - The Cost Calculator */}
-                    <div className={styles.problemRight}>
-                        <h3 className={styles.columnTitle}>The Cost</h3>
-
-                        <div className={styles.calculator}>
-                            <h4 className={styles.calcTitle}>Your Business&apos;s Lost Revenue</h4>
-
-                            <div className={styles.calcSliders}>
-                                <div className={styles.calcSliderGroup}>
-                                    <div className={styles.calcSliderHeader}>
-                                        <label>Customer calls per day</label>
-                                        <span className={styles.calcValue}>{calcValues.callsPerDay}</span>
-                                    </div>
-                                    <input
-                                        type="range"
-                                        min="5"
-                                        max="100"
-                                        value={calcValues.callsPerDay}
-                                        onChange={(e) => setCalcValues({ ...calcValues, callsPerDay: parseInt(e.target.value) })}
-                                        onMouseUp={() => trackAction('v5_calc_slider', `calls_per_day:${calcValues.callsPerDay}`)}
-                                        onTouchEnd={() => trackAction('v5_calc_slider', `calls_per_day:${calcValues.callsPerDay}`)}
-                                        className={styles.calcSlider}
-                                    />
-                                    <div className={styles.calcSliderLabels}>
-                                        <span>5</span>
-                                        <span>100</span>
-                                    </div>
-                                </div>
-
-                                <div className={styles.calcSliderGroup}>
-                                    <div className={styles.calcSliderHeader}>
-                                        <label>Average deal value</label>
-                                        <span className={styles.calcValue}>₹{calcValues.dealValue.toLocaleString('en-IN')}</span>
-                                    </div>
-                                    <input
-                                        type="range"
-                                        min="500"
-                                        max="50000"
-                                        step="500"
-                                        value={calcValues.dealValue}
-                                        onChange={(e) => setCalcValues({ ...calcValues, dealValue: parseInt(e.target.value) })}
-                                        onMouseUp={() => trackAction('v5_calc_slider', `deal_value:${calcValues.dealValue}`)}
-                                        onTouchEnd={() => trackAction('v5_calc_slider', `deal_value:${calcValues.dealValue}`)}
-                                        className={styles.calcSlider}
-                                    />
-                                    <div className={styles.calcSliderLabels}>
-                                        <span>₹500</span>
-                                        <span>₹50,000</span>
-                                    </div>
-                                </div>
-
-                                <div className={styles.calcSliderGroup}>
-                                    <div className={styles.calcSliderHeader}>
-                                        <label>Missed call rate</label>
-                                        <span className={styles.calcValue}>{calcValues.missRate}%</span>
-                                    </div>
-                                    <input
-                                        type="range"
-                                        min="10"
-                                        max="70"
-                                        value={calcValues.missRate}
-                                        onChange={(e) => setCalcValues({ ...calcValues, missRate: parseInt(e.target.value) })}
-                                        onMouseUp={() => trackAction('v5_calc_slider', `miss_rate:${calcValues.missRate}`)}
-                                        onTouchEnd={() => trackAction('v5_calc_slider', `miss_rate:${calcValues.missRate}`)}
-                                        className={styles.calcSlider}
-                                    />
-                                    <div className={styles.calcSliderLabels}>
-                                        <span>10%</span>
-                                        <span>70%</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className={styles.calcResult}>
-                                <div className={styles.calcResultAmount}>
-                                    ₹{(calcValues.callsPerDay * calcValues.dealValue * (calcValues.missRate / 100) * 260).toLocaleString('en-IN')}
-                                    <span>/year</span>
-                                </div>
-                                <p className={styles.calcResultLabel}>Lost revenue from missed customer calls</p>
-                            </div>
-
-                            <div className={styles.hiddenCosts}>
-                                <h5>Additional Business Costs</h5>
-                                <div className={styles.hiddenCostsGrid}>
-                                    <div className={styles.hiddenCostItem}>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                                            <circle cx="9" cy="7" r="4" />
-                                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                                        </svg>
-                                        <span className={styles.hiddenCostName}>Receptionist</span>
-                                        <span className={styles.hiddenCostValue}>₹3.5L</span>
-                                    </div>
-                                    <div className={styles.hiddenCostItem}>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <rect x="3" y="4" width="18" height="18" rx="2" />
-                                            <path d="M16 2v4M8 2v4M3 10h18" />
-                                        </svg>
-                                        <span className={styles.hiddenCostName}>No-Shows</span>
-                                        <span className={styles.hiddenCostValue}>₹2L</span>
-                                    </div>
-                                    <div className={styles.hiddenCostItem}>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <circle cx="12" cy="12" r="10" />
-                                            <polyline points="12 6 12 12 16 14" />
-                                        </svg>
-                                        <span className={styles.hiddenCostName}>After-Hours</span>
-                                        <span className={styles.hiddenCostValue}>₹4L</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+              </div>
+              <div className={`${s.messageRow} ${s.messageRight}`}>
+                <div className={s.messageBubble}>
+                  <span className={s.msgTag}>[CALLER]</span>
+                  <span>&quot;3 PM please. What are your charges?&quot;</span>
                 </div>
-            </section>
-
-            {/* Solution Section with Conversation Demo */}
-            <section id="solution" data-animate data-track-view="v5_view_solution" className={`${styles.solution} ${isVisible['solution'] ? styles.visible : ''}`}>
-                <div className={styles.solutionContent}>
-                    <div className={styles.solutionText}>
-                        <div className={styles.solutionBadge}>The Solution</div>
-                        <h2 className={styles.solutionTitle}>
-                            Your <span className={styles.highlight}>24/7 AI Receptionist</span> That Never Misses a Call
-                        </h2>
-                        <p className={styles.solutionDescription}>
-                            Our AI answers every call instantly, handles bookings, resolves queries, and captures leads —
-                            all while sounding indistinguishable from your best team member.
-                        </p>
-
-                        <div className={styles.capabilityList}>
-                            <div className={styles.capabilityItem}>
-                                <div className={styles.capabilityIcon}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h4>Sub-500ms Response</h4>
-                                    <p>Natural conversation flow — no awkward pauses</p>
-                                </div>
-                            </div>
-                            <div className={styles.capabilityItem}>
-                                <div className={styles.capabilityIcon}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <rect x="3" y="4" width="18" height="18" rx="2" />
-                                        <path d="M16 2v4M8 2v4M3 10h18" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h4>Real-Time Calendar Sync</h4>
-                                    <p>Books directly into your existing systems</p>
-                                </div>
-                            </div>
-                            <div className={styles.capabilityItem}>
-                                <div className={styles.capabilityIcon}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <circle cx="12" cy="12" r="10" />
-                                        <path d="M12 6v6l4 2" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h4>24/7 Availability</h4>
-                                    <p>Capture night &amp; weekend calls automatically</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <a href="/demo" className={styles.btnDemo} data-track="v5_solution_demo">
-                            Experience It Live
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M5 12h14M12 5l7 7-7 7" />
-                            </svg>
-                        </a>
-                    </div>
-
-                    {/* Conversation Demo */}
-                    <div className={styles.solutionVisual}>
-                        <div className={styles.conversationDemo}>
-                            <div className={styles.conversationHeader}>
-                                <div className={styles.conversationDot}></div>
-                                <span>Live Conversation</span>
-                            </div>
-                            <div className={styles.conversationFlow}>
-                                <div className={styles.messageIncoming}>
-                                    <div className={styles.messageAvatar}>
-                                        <svg viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
-                                        </svg>
-                                    </div>
-                                    <div className={styles.messageBubble}>
-                                        <p>&quot;Hi, I need to book an appointment for tomorrow. Do you have any slots available?&quot;</p>
-                                        <span className={styles.messageTime}>Customer</span>
-                                    </div>
-                                </div>
-
-                                <div className={styles.messageOutgoing}>
-                                    <div className={styles.messageBubble}>
-                                        <p>&quot;Of course! I have openings tomorrow at 11 AM and 3 PM. Which time works better for you?&quot;</p>
-                                        <span className={styles.messageTime}>AI Receptionist &middot; 380ms</span>
-                                    </div>
-                                    <div className={styles.messageAvatarAI}>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
-                                            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                                        </svg>
-                                    </div>
-                                </div>
-
-                                <div className={styles.messageIncoming}>
-                                    <div className={styles.messageAvatar}>
-                                        <svg viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
-                                        </svg>
-                                    </div>
-                                    <div className={styles.messageBubble}>
-                                        <p>&quot;3 PM works. What are your charges for consultation?&quot;</p>
-                                        <span className={styles.messageTime}>Customer</span>
-                                    </div>
-                                </div>
-
-                                <div className={styles.messageOutgoing}>
-                                    <div className={styles.messageBubble}>
-                                        <p>&quot;Great choice! I&apos;ve booked you for 3 PM tomorrow. You&apos;ll receive a confirmation SMS shortly with all the details. Anything else I can help with?&quot;</p>
-                                        <span className={styles.messageTime}>AI Receptionist &middot; 420ms</span>
-                                    </div>
-                                    <div className={styles.messageAvatarAI}>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
-                                            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className={styles.actionIndicator}>
-                                <div className={styles.actionIcon}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M9 12l2 2 4-4" />
-                                        <circle cx="12" cy="12" r="10" />
-                                    </svg>
-                                </div>
-                                <span>Booked &middot; SMS Sent &middot; Calendar Updated</span>
-                            </div>
-                        </div>
-                    </div>
+              </div>
+              <div className={`${s.messageRow} ${s.messageLeft}`}>
+                <div className={s.messageBubble}>
+                  <span className={s.msgTagAI}>[AI]</span>
+                  <span>&quot;Our consultation fee is ₹1,500. Shall I confirm the slot?&quot;</span>
+                  <span className={s.msgLatency}>410ms</span>
                 </div>
-            </section>
-
-            {/* Features Section */}
-            <section id="features" data-animate data-track-view="v5_view_features" className={`${styles.features} ${isVisible['features'] ? styles.visible : ''}`}>
-                <div className={styles.sectionHeader}>
-                    <h2>Everything Your Receptionist Does, <span className={styles.highlight}>Automated</span></h2>
-                    <p>Comprehensive call handling built for every business</p>
+              </div>
+              <div className={`${s.messageRow} ${s.messageRight}`}>
+                <div className={s.messageBubble}>
+                  <span className={s.msgTag}>[CALLER]</span>
+                  <span>&quot;Yes, go ahead.&quot;</span>
                 </div>
-
-                <div className={styles.featureGrid}>
-                    {features.map((feature, index) => (
-                        <div key={index} className={styles.featureCard} style={{ animationDelay: `${index * 0.1}s` }}>
-                            <div className={styles.featureIcon}>
-                                {feature.icon}
-                            </div>
-                            <h3>{feature.title}</h3>
-                            <p>{feature.description}</p>
-                        </div>
-                    ))}
+              </div>
+              <div className={`${s.messageRow} ${s.messageLeft}`}>
+                <div className={s.messageBubble}>
+                  <span className={s.msgTagAI}>[AI]</span>
+                  <span>&quot;Booked for 3 PM tomorrow. Confirmation SMS sent. Anything else?&quot;</span>
+                  <span className={s.msgLatency}>420ms</span>
                 </div>
-            </section>
+              </div>
+            </div>
 
-            {/* Testimonials Section */}
-            <section id="testimonials" data-animate data-track-view="v5_view_testimonials" className={`${styles.testimonials} ${isVisible['testimonials'] ? styles.visible : ''}`}>
-                <div className={styles.sectionHeader}>
-                    <h2>Trusted by <span className={styles.highlight}>Businesses</span> Across India</h2>
-                    <p>Real results from real businesses — seedha numbers</p>
+            <div className={s.convoStatus}>
+              <span className={s.convoStatusItem}><span className={s.convoStatusDot} /> Booked</span>
+              <span className={s.convoStatusItem}><span className={s.convoStatusDot} /> SMS Sent</span>
+              <span className={s.convoStatusItem}><span className={s.convoStatusDot} /> Calendar Updated</span>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── FEATURES BENTO ──────────────────────────── */}
+        <section className={s.featuresSection}>
+          <h2 className={`${s.sectionTitle} ${s.reveal}`}>
+            Everything Your Receptionist Does,<br /><span className={s.textAccent}>Automated.</span>
+          </h2>
+
+          <div className={s.bentoGrid}>
+            {FEATURES.map((feat, i) => (
+              <div
+                key={feat.num}
+                className={`${s.bentoItem} ${feat.primary ? s.bentoPrimary : ''} ${s.reveal}`}
+                style={{ transitionDelay: `${i * 0.05}s` }}
+                data-hover
+              >
+                <span className={s.bentoIcon}>{feat.num}</span>
+                <h3 className={s.bentoTitle}>{feat.title}</h3>
+                <p className={s.bentoDesc}>{feat.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ─── TESTIMONIALS ────────────────────────────── */}
+        <section className={s.testimonialsSection}>
+          <h2 className={`${s.sectionTitle} ${s.reveal}`}>
+            Real Results.<br /><span className={s.textAccent}>Real Numbers.</span>
+          </h2>
+
+          <div className={s.testimonialsGrid}>
+            {TESTIMONIALS.map((t, i) => (
+              <div
+                key={t.name}
+                className={`${s.testimonialCard} ${s.reveal}`}
+                style={{ transitionDelay: `${i * 0.08}s` }}
+                data-hover
+              >
+                <div className={s.testimonialMetric}>{t.metric}</div>
+                <p className={s.testimonialQuote}>&quot;{t.quote}&quot;</p>
+                <div className={s.testimonialAuthor}>
+                  <p className={s.testimonialName}>{t.name}</p>
+                  <p className={s.testimonialRole}>{t.role}</p>
                 </div>
+              </div>
+            ))}
+          </div>
+        </section>
 
-                <div className={styles.testimonialGrid}>
-                    {testimonials.map((testimonial, index) => (
-                        <div key={index} className={styles.testimonialCard}>
-                            <div className={styles.testimonialMetric}>{testimonial.metric}</div>
-                            <p className={styles.testimonialQuote}>&quot;{testimonial.quote}&quot;</p>
-                            <div className={styles.testimonialAuthor}>
-                                <div className={styles.testimonialAvatar}>
-                                    <Image
-                                        src={testimonial.image}
-                                        alt={testimonial.name}
-                                        fill
-                                        style={{ objectFit: 'cover' }}
-                                    />
-                                </div>
-                                <div>
-                                    <div className={styles.testimonialName}>{testimonial.name}</div>
-                                    <div className={styles.testimonialRole}>{testimonial.role}</div>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </section>
+        {/* ─── PRICING ─────────────────────────────────── */}
+        <section className={s.pricingSection}>
+          <h2 className={`${s.sectionTitle} ${s.reveal}`}>
+            Simple<br /><span className={s.textAccent}>Pricing.</span>
+          </h2>
 
+          <div className={`${s.pricingCard} ${s.reveal}`}>
+            <div className={s.pricingLabel}>Estimated Monthly</div>
+            <div className={s.pricingRange}>
+              <span className={s.pricingValue}>₹5,000</span>
+              <span className={s.pricingDash}>—</span>
+              <span className={s.pricingValue}>₹30,000</span>
+            </div>
+            <p className={s.pricingNote}>Based on call volume and features required</p>
+            <div className={s.pricingContext}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 16v-4M12 8h.01" />
+              </svg>
+              <span>Most small &amp; mid-size businesses fall in the <strong>₹8,000 — ₹15,000</strong> range</span>
+            </div>
+            <div className={s.pricingFeatures}>
+              {PRICING_FEATURES.map((feat) => (
+                <span key={feat} className={s.pricingFeatureItem}>
+                  <span className={s.pricingCheckmark}>+</span> {feat}
+                </span>
+              ))}
+            </div>
+            <a href="/book" className={s.btnPrimary} data-hover>Get Started</a>
+          </div>
+        </section>
 
-            {/* Pricing Section */}
-            <section id="pricing" data-animate data-track-view="v5_view_pricing" className={`${styles.pricing} ${isVisible['pricing'] ? styles.visible : ''}`}>
-                <div className={styles.pricingContent}>
-                    <div className={styles.pricingNote}>
-                        <span className={styles.pricingLabel}>Estimated Cost</span>
-                        <h3 className={styles.pricingValue}>₹5,000 - ₹30,000</h3>
-                        <p className={styles.pricingSubtext}>Most businesses fall within this range depending on requirements.</p>
-                    </div>
-                </div>
-            </section>
+        {/* ─── FAQ ──────────────────────────────────────── */}
+        <section className={s.faqSection}>
+          <h2 className={`${s.sectionTitle} ${s.reveal}`}>
+            Frequently<br /><span className={s.textAccent}>Asked.</span>
+          </h2>
 
-            {/* FAQ Section */}
-            <section id="faq" data-animate data-track-view="v5_view_faq" className={`${styles.faq} ${isVisible['faq'] ? styles.visible : ''}`}>
-                <div className={styles.sectionHeader}>
-                    <h2>Frequently Asked <span className={styles.highlight}>Questions</span></h2>
-                    <p>Know everything about ElevixAI</p>
-                </div>
+          <div className={s.faqContainer}>
+            {FAQS.map((faq, i) => (
+              <div key={i} className={`${s.faqItem} ${s.reveal}`} style={{ transitionDelay: `${i * 0.04}s` }}>
+                <button
+                  className={s.faqButton}
+                  onClick={() => setActiveFaq(activeFaq === i ? null : i)}
+                  data-hover
+                >
+                  <span>{faq.q}</span>
+                  <span className={`${s.faqArrow} ${activeFaq === i ? s.faqArrowOpen : ''}`}>&#9660;</span>
+                </button>
+                {activeFaq === i && (
+                  <div className={s.faqAnswer}>{faq.a}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
 
-                <div className={styles.faqContainer}>
-                    {faqs.map((faq, index) => (
-                        <div key={index} className={styles.faqItem}>
-                            <button
-                                className={`${styles.faqQuestion} ${openFaq === index ? styles.faqOpen : ''}`}
-                                onClick={() => {
-                                    const isOpening = openFaq !== index;
-                                    trackAction(isOpening ? 'v5_faq_open' : 'v5_faq_close', String(index));
-                                    setOpenFaq(openFaq === index ? null : index);
-                                }}
-                            >
-                                <span>{faq.question}</span>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-                            <div className={`${styles.faqAnswer} ${openFaq === index ? styles.faqAnswerOpen : ''}`}>
-                                <p>{faq.answer}</p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </section>
+        {/* ─── ASK AI CTA (Without duplicate contact form) ──────────────── */}
+        <section className={`${s.askAiSection} ${s.reveal}`}>
+          <div className={s.askAiCard}>
+            <h3 className={s.askAiTitle}>Questions? Ask Our Voice Agent Live</h3>
+            <p className={s.askAiDesc}>
+              Experience firsthand how our AI handles conversations — ask anything, book appointments, or test it yourself.
+            </p>
+            <a href="/demo" className={s.btnPrimary} data-hover>
+              Talk to AI Now
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <path d="M12 19v3" />
+              </svg>
+            </a>
+            <p className={s.askAiNote}>No signup required. Start talking instantly.</p>
+          </div>
+        </section>
 
-            {/* Final CTA */}
-            <section className={styles.finalCTA}>
-                <div className={styles.ctaContent}>
-                    <h2>Ready to Try? <span className={styles.highlight}>Talk Now</span></h2>
-                    <p>Experience firsthand how our AI handles conversations — ask anything.</p>
-                    <div className={styles.ctaButtons}>
-                        <a href="/demo" className={styles.btnPrimary} data-track="v5_cta_demo">
-                            Talk to AI Now
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
-                                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                                <path d="M12 19v3" />
-                            </svg>
-                        </a>
-                        <a href="mailto:query@elevix.site" className={styles.btnSecondary} data-track="v5_cta_contact" target="_blank" rel="noopener noreferrer">
-                            Contact Us
-                        </a>
-                    </div>
-                    <p className={styles.ctaNote}>No signup required. Talk directly.</p>
-                </div>
-            </section>
+        {/* Contact section removed as per request */}
+      </div>
 
-            {/* Footer */}
-            <footer className={styles.footer}>
-                <p>&copy; 2025 ElevixAI. All rights reserved.</p>
-            </footer>
+      {/* ─── MARQUEE CTA ─────────────────────────────── */}
+      <a href="/demo" className={s.ctaLink} aria-label="Try the demo">
+        <section className={s.ctaSection} data-hover>
+          <div className={s.marqueeContent}>
+            <span>Ready to Try? Abhi Baat Karo &#10022;</span>
+            <span>Ready to Try? Abhi Baat Karo &#10022;</span>
+            <span>Ready to Try? Abhi Baat Karo &#10022;</span>
+            <span>Ready to Try? Abhi Baat Karo &#10022;</span>
+          </div>
+        </section>
+      </a>
+
+      {/* ─── FOOTER ──────────────────────────────────── */}
+      <footer className={s.footer}>
+        <div className={`${s.container} ${s.footerInner}`}>
+          <p className={s.footerCopyright}>&copy; 2025 Elevix. All rights reserved.</p>
+          <div className={s.footerLinks}>
+            <a href="/demo" className={s.footerLink}>Demo</a>
+            <a href="/book" className={s.footerLink}>Book a Call</a>
+            <a href="mailto:query@elevix.site" className={s.footerLink}>query@elevix.site</a>
+          </div>
+          <p className={s.footerStatus}>
+            <span className={s.footerStatusDot} />
+            System Operational
+          </p>
         </div>
-    );
+      </footer>
+    </div>
+  );
 }

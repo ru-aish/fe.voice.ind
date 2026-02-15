@@ -81,13 +81,6 @@ export default function DorkkBrutalistPage() {
   // Canvas Ref
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Contact form state
-  const [contactName, setContactName] = useState('');
-  const [contactEmail, setContactEmail] = useState('');
-  const [contactPhone, setContactPhone] = useState('');
-  const [contactMessage, setContactMessage] = useState('');
-  const [contactSubmitted, setContactSubmitted] = useState(false);
-
   // Scroll reveal
   useEffect(() => {
     const els = document.querySelectorAll(`.${s.reveal}`);
@@ -261,13 +254,6 @@ export default function DorkkBrutalistPage() {
 
   // Calculator derived value
   const annualLoss = calls * dealValue * 12;
-
-  const handleContactSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // In production, send to API
-    setContactSubmitted(true);
-    setTimeout(() => setContactSubmitted(false), 5000);
-  };
 
   return (
     <div ref={pageRef} className={`${s.page} ${cursorHover ? s.cursorHover : ''}`}>
@@ -669,159 +655,6 @@ export default function DorkkBrutalistPage() {
           </div>
         </section>
 
-        {/* ─── CONTACT US ────────────────────────────────── */}
-        <section id="contact" className={s.contactSection}>
-          <div className={s.contactGrid}>
-            {/* Left Info */}
-            <div className={`${s.contactInfo} ${s.reveal}`}>
-              <h2 className={s.contactTitle}>
-                Book Your<br /><span className={s.textAccent}>30-Minute</span><br />Setup Call
-              </h2>
-              <p className={s.contactDesc}>
-                In this quick call, we&apos;ll configure your AI receptionist to match your business perfectly.
-              </p>
-
-              <div className={s.coverageList}>
-                <h4>What we&apos;ll cover:</h4>
-                <ul>
-                  {[
-                    'Your existing systems & CRM',
-                    'Services & specialties offered',
-                    'Voice tone & personality preferences',
-                    'Business hours & scheduling rules',
-                    'Custom scripts & FAQ responses',
-                    'Any special requirements or workflows',
-                  ].map((item, i) => (
-                    <li key={i}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
-                        <path d="M20 6L9 17l-5-5" />
-                      </svg>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className={s.promiseBox}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
-                </svg>
-                <p>
-                  After this call, we&apos;ll build your AI in <strong>48 hours</strong>.
-                  We deploy it and maintain it for the duration of your service.
-                </p>
-              </div>
-
-              <div className={s.reachOut}>
-                <h4>Questions? Reach us at:</h4>
-                <a href="mailto:query@elevix.site" className={s.reachOutLink}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                    <polyline points="22,6 12,13 2,6" />
-                  </svg>
-                  query@elevix.site
-                </a>
-              </div>
-            </div>
-
-            {/* Right Form */}
-            <div className={`${s.contactFormWrapper} ${s.reveal}`} style={{ transitionDelay: '0.1s' }}>
-              {contactSubmitted ? (
-                <div className={s.formSuccess}>
-                  <div className={s.formSuccessIcon}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="40" height="40">
-                      <path d="M20 6L9 17l-5-5" />
-                    </svg>
-                  </div>
-                  <h3>Thank You!</h3>
-                  <p>We&apos;ll get back to you within 24 hours.</p>
-                </div>
-              ) : (
-                <form onSubmit={handleContactSubmit} className={s.contactForm}>
-                  <div className={s.formGroup}>
-                    <label htmlFor="c-name">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                      </svg>
-                      Full Name <span className={s.required}>*</span>
-                    </label>
-                    <input
-                      id="c-name"
-                      type="text"
-                      placeholder="Your Name"
-                      value={contactName}
-                      onChange={(e) => setContactName(e.target.value)}
-                      required
-                      className={s.input}
-                    />
-                  </div>
-                  <div className={s.formGroup}>
-                    <label htmlFor="c-email">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                        <polyline points="22,6 12,13 2,6" />
-                      </svg>
-                      Email <span className={s.required}>*</span>
-                    </label>
-                    <input
-                      id="c-email"
-                      type="email"
-                      placeholder="you@company.com"
-                      value={contactEmail}
-                      onChange={(e) => setContactEmail(e.target.value)}
-                      required
-                      className={s.input}
-                    />
-                  </div>
-                  <div className={s.formGroup}>
-                    <label htmlFor="c-phone">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72" />
-                      </svg>
-                      Phone <span className={s.optional}>(optional)</span>
-                    </label>
-                    <input
-                      id="c-phone"
-                      type="tel"
-                      placeholder="+91 98765 43210"
-                      value={contactPhone}
-                      onChange={(e) => setContactPhone(e.target.value)}
-                      className={s.input}
-                    />
-                  </div>
-                  <div className={s.formGroup}>
-                    <label htmlFor="c-message">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                      </svg>
-                      Message <span className={s.optional}>(optional)</span>
-                    </label>
-                    <textarea
-                      id="c-message"
-                      placeholder="Tell us about your business..."
-                      value={contactMessage}
-                      onChange={(e) => setContactMessage(e.target.value)}
-                      rows={4}
-                      className={s.textarea}
-                    />
-                  </div>
-                  <button type="submit" className={s.btnPrimary} data-hover>
-                    Book My Setup Call
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                      <rect x="3" y="4" width="18" height="18" rx="2" />
-                      <path d="M16 2v4M8 2v4M3 10h18" />
-                    </svg>
-                  </button>
-                  <p className={s.formNote}>
-                    Or use our voice agent to book: <a href="/demo">Talk to AI</a>
-                  </p>
-                </form>
-              )}
-            </div>
-          </div>
-        </section>
       </div>
 
       {/* ─── MARQUEE CTA ─────────────────────────────── */}
