@@ -2,14 +2,14 @@
 
 import React from 'react';
 import s from './Hero.module.css';
-import WaveVisualizer from '../WaveVisualizer/WaveVisualizer';
 
 interface HeroProps {
   revealClass?: string;
   onReveal?: (node: HTMLElement | null) => void;
+  children?: React.ReactNode;
 }
 
-export default function Hero({ revealClass }: HeroProps) {
+export default function Hero({ revealClass, children }: HeroProps) {
   return (
     <header className={s.hero}>
       {/* Left Column: Content */}
@@ -57,9 +57,9 @@ export default function Hero({ revealClass }: HeroProps) {
         </div>
       </div>
 
-      {/* Right Column: Visualizer (hidden on mobile via CSS) */}
+      {/* Right Column: Calculator (passed as children, hidden on mobile via CSS) */}
       <div className={`${s.heroVisualizer} ${revealClass || ''}`}>
-        <WaveVisualizer />
+        {children}
       </div>
     </header>
   );

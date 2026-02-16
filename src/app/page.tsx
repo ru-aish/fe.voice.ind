@@ -39,17 +39,10 @@ const PRICING_FEATURES = [
   'Dedicated Manager',
 ];
 
-const CHAOS_STORY = [
-  { time: '8:45 AM', text: 'New lead calls while you\'re in a meeting', tag: 'voicemail', icon: 'phone' },
-  { time: '9:15 AM', text: 'Customer needs urgent appointment today', tag: null, icon: 'alert' },
-  { time: '12:30 PM', text: 'You finally check voicemail during lunch', tag: null, icon: 'phone-check' },
-  { time: '12:45 PM', text: 'Call back — already went to competitor', tag: 'lost', icon: 'x' },
-];
-
-const CHAIN_ITEMS = [
-  { title: 'Empty Appointment Slots', content: 'Missed calls mean empty slots. With average lead values of ₹2,000-₹5,000, just 3 empty slots per day costs your business over ₹20 lakh annually in lost revenue.' },
-  { title: 'Leads Go to Competitors', content: 'When prospects can\'t reach you, they call the next business. 85% of callers won\'t leave a voicemail — they simply move on to someone who answers.' },
-  { title: 'Staff Burnout & Turnover', content: 'Your team shouldn\'t be receptionists. Juggling core work and phone calls leads to burnout, mistakes, and high turnover costs averaging ₹3-5 lakh per employee.' },
+const IMPACT_POINTS = [
+  { stat: '85%', text: 'of callers won\'t leave a voicemail — they call your competitor instead.' },
+  { stat: '3x', text: 'more leads lost after-hours when no one picks up the phone.' },
+  { stat: '₹20L+', text: 'average annual revenue lost from just 3 missed calls per day.' },
 ];
 
 // ─── INR Formatter ───────────────────────────────────────────
@@ -69,16 +62,13 @@ export default function HomePage() {
   const pageRef = useRef<HTMLDivElement>(null);
   const [cursorHover, setCursorHover] = useState(false);
 
-  // Calculator state
-  const [calls, setCalls] = useState(45);
-  const [missRate, setMissRate] = useState(30);
-  const [dealValue, setDealValue] = useState(2500);
+  // Calculator state - defaults: 10 calls, 20% miss rate, ₹2,000 value
+  const [calls, setCalls] = useState(10);
+  const [missRate, setMissRate] = useState(20);
+  const [dealValue, setDealValue] = useState(2000);
 
   // FAQ state
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
-  
-  // Chain reaction state
-  const [openChain, setOpenChain] = useState<number | null>(null);
 
   // Scroll reveal
   useEffect(() => {
@@ -197,12 +187,98 @@ export default function HomePage() {
           </div>
         </nav>
 
-        {/* ─── HERO (Refactored Component) ────────────────── */}
-        <Hero revealClass={s.reveal} />
+        {/* ─── HERO with Calculator on the right ────────────────── */}
+        <Hero revealClass={s.reveal}>
+          <div className={s.calcBox}>
+            <h4 className={s.calcBoxTitle}>Your Business&apos;s Lost Revenue</h4>
+            <div className={s.sliderGroup} data-hover>
+              <div className={s.sliderHeader}>
+                <span>Calls / Day</span>
+                <span className={s.sliderValue}>{numFormat.format(calls)}</span>
+              </div>
+              <input
+                type="range"
+                min={5}
+                max={200}
+                value={calls}
+                onChange={(e) => setCalls(parseInt(e.target.value, 10))}
+                className={s.slider}
+                aria-label="Calls per day"
+              />
+            </div>
 
-        {/* ─── PROBLEM: CHAOS STORY ──────────────────────── */}
+            <div className={s.sliderGroup} data-hover>
+              <div className={s.sliderHeader}>
+                <span>Miss Rate (%)</span>
+                <span className={s.sliderValue}>{missRate}%</span>
+              </div>
+              <input
+                type="range"
+                min={5}
+                max={80}
+                step={1}
+                value={missRate}
+                onChange={(e) => setMissRate(parseInt(e.target.value, 10))}
+                className={s.slider}
+                aria-label="Miss rate percentage"
+              />
+            </div>
+
+            <div className={s.sliderGroup} data-hover>
+              <div className={s.sliderHeader}>
+                <span>Avg. Value per Lead (₹)</span>
+                <span className={s.sliderValue}>{numFormat.format(dealValue)}</span>
+              </div>
+              <input
+                type="range"
+                min={500}
+                max={10000}
+                step={500}
+                value={dealValue}
+                onChange={(e) => setDealValue(parseInt(e.target.value, 10))}
+                className={s.slider}
+                aria-label="Average value per lead"
+              />
+            </div>
+
+            <div className={s.resultBox}>
+              <div className={s.resultLabel}>Revenue Lost Annually</div>
+              <div className={s.resultNumber}>{inrFormat.format(annualLoss)}</div>
+            </div>
+
+            {/* Monthly insight box */}
+            <div className={s.calcInsightBox}>
+              <span className={s.calcInsightIcon}>!</span>
+              <p className={s.calcInsightText}>
+                That&apos;s <strong className={s.textAccent}>₹{numFormat.format(Math.round(annualLoss / 12))}</strong> lost every month
+              </p>
+            </div>
+
+            {/* Hidden costs grid */}
+            <div className={s.hiddenCosts}>
+              <h5 className={s.hiddenCostsTitle}>Additional Costs You&apos;re Paying</h5>
+              <div className={s.hiddenCostsGrid}>
+                <div className={s.hiddenCostItem}>
+                  <span className={s.hiddenCostLabel}>Front Desk</span>
+                  <span className={s.hiddenCostValue}>₹4.2L</span>
+                </div>
+                <div className={s.hiddenCostItem}>
+                  <span className={s.hiddenCostLabel}>No-Shows</span>
+                  <span className={s.hiddenCostValue}>₹2.1L</span>
+                </div>
+                <div className={s.hiddenCostItem}>
+                  <span className={s.hiddenCostLabel}>After-Hours</span>
+                  <span className={s.hiddenCostValue}>₹2.8L</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Hero>
+
+        {/* ─── PROBLEM: The Reality + Live Communication Log ──────── */}
         <section className={s.problemSection}>
           <div className={s.problemGrid}>
+            {/* Left: The Reality */}
             <div className={`${s.problemContent} ${s.reveal}`}>
               <h3 className={s.columnLabel}>The Reality</h3>
               <h2 className={s.problemTitle}>
@@ -212,152 +288,86 @@ export default function HomePage() {
                 Every unanswered call is a customer choosing your competitor.
               </p>
               
-              {/* Chaos Timeline */}
-              <div className={s.chaosTimeline}>
-                {CHAOS_STORY.map((item, i) => (
-                  <div key={i} className={s.chaosItem}>
-                    <div className={s.chaosTime}>{item.time}</div>
-                    <div className={s.chaosDot} />
-                    <div className={s.chaosContent}>
-                      <span>{item.text}</span>
-                      {item.tag && <span className={`${s.chaosTag} ${item.tag === 'lost' ? s.chaosTagDanger : ''}`}>{item.tag}</span>}
-                    </div>
+              {/* Impact Points */}
+              <div className={s.impactList}>
+                {IMPACT_POINTS.map((point, i) => (
+                  <div key={i} className={s.impactItem}>
+                    <span className={s.impactStat}>{point.stat}</span>
+                    <p className={s.impactText}>{point.text}</p>
                   </div>
                 ))}
-                <div className={`${s.chaosItem} ${s.chaosItemResult}`}>
-                  <div className={s.chaosTime}>Result</div>
-                  <div className={`${s.chaosDot} ${s.chaosDotDanger}`} />
-                  <div className={s.chaosContent}>
-                    <span className={s.textDanger}>-₹2,500+ lifetime customer value lost</span>
-                  </div>
-                </div>
               </div>
 
-              {/* Chain Reaction */}
-              <div className={s.chainReaction}>
-                <h4 className={s.chainTitle}>The Domino Effect</h4>
-                {CHAIN_ITEMS.map((item, i) => {
-                  const isOpen = openChain === i;
-                  const triggerId = `chain-trigger-${i}`;
-                  const panelId = `chain-panel-${i}`;
-
-                  return (
-                    <div key={i} className={s.chainItem}>
-                      <button
-                        type="button"
-                        id={triggerId}
-                        className={`${s.chainBtn} ${isOpen ? s.chainBtnOpen : ''}`}
-                        aria-expanded={isOpen}
-                        aria-controls={panelId}
-                        onClick={() => setOpenChain(isOpen ? null : i)}
-                        data-hover
-                      >
-                        <span>{item.title}</span>
-                        <span className={s.chainArrow}>&#9660;</span>
-                      </button>
-                      {isOpen && (
-                        <div id={panelId} role="region" aria-labelledby={triggerId} className={s.chainAnswer}>
-                          {item.content}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              <a href="/demo" className={s.btnPrimary} data-hover style={{ alignSelf: 'flex-start', marginTop: '1rem' }}>
+                See the Solution
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </a>
             </div>
 
-            {/* Right: Calculator */}
-            <div className={`${s.calcColumn} ${s.reveal}`} style={{ transitionDelay: '0.1s' }}>
-              <h3 className={s.columnLabel}>The Cost</h3>
-              <div className={s.calcBox}>
-                <h4 className={s.calcBoxTitle}>Your Business&apos;s Lost Revenue</h4>
-                <div className={s.sliderGroup} data-hover>
-                  <div className={s.sliderHeader}>
-                    <span>Calls / Day</span>
-                    <span className={s.sliderValue}>{numFormat.format(calls)}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={5}
-                    max={200}
-                    value={calls}
-                    onChange={(e) => setCalls(parseInt(e.target.value, 10))}
-                    className={s.slider}
-                    aria-label="Calls per day"
-                  />
+            {/* Right: Live Communication Log */}
+            <div className={`${s.convoColumn} ${s.reveal}`} style={{ transitionDelay: '0.1s' }}>
+              <h3 className={s.columnLabel}>The Solution</h3>
+              <div className={s.conversationLog}>
+                <div className={s.convoHeader}>
+                  <div className={s.convoDot} />
+                  <span className={s.convoLabel}>Live Communication Log</span>
                 </div>
-
-                <div className={s.sliderGroup} data-hover>
-                  <div className={s.sliderHeader}>
-                    <span>Miss Rate (%)</span>
-                    <span className={s.sliderValue}>{missRate}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={5}
-                    max={80}
-                    step={1}
-                    value={missRate}
-                    onChange={(e) => setMissRate(parseInt(e.target.value, 10))}
-                    className={s.slider}
-                    aria-label="Miss rate percentage"
-                  />
-                </div>
-
-                <div className={s.sliderGroup} data-hover>
-                  <div className={s.sliderHeader}>
-                    <span>Avg. Value per Lead (₹)</span>
-                    <span className={s.sliderValue}>{numFormat.format(dealValue)}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={500}
-                    max={10000}
-                    step={500}
-                    value={dealValue}
-                    onChange={(e) => setDealValue(parseInt(e.target.value, 10))}
-                    className={s.slider}
-                    aria-label="Average value per lead"
-                  />
-                </div>
-
-                <div className={s.resultBox}>
-                  <div className={s.resultLabel}>Revenue Lost Annually</div>
-                  <div className={s.resultNumber}>{inrFormat.format(annualLoss)}</div>
-                </div>
-
-                {/* Monthly insight box */}
-                <div className={s.calcInsightBox}>
-                  <span className={s.calcInsightIcon}>!</span>
-                  <p className={s.calcInsightText}>
-                    That&apos;s <strong className={s.textAccent}>₹{numFormat.format(Math.round(annualLoss / 12))}</strong> lost every month
-                  </p>
-                </div>
-
-                {/* Hidden costs grid */}
-                <div className={s.hiddenCosts}>
-                  <h5 className={s.hiddenCostsTitle}>Additional Costs You&apos;re Paying</h5>
-                  <div className={s.hiddenCostsGrid}>
-                    <div className={s.hiddenCostItem}>
-                      <span className={s.hiddenCostLabel}>Front Desk</span>
-                      <span className={s.hiddenCostValue}>₹4.2L</span>
-                    </div>
-                    <div className={s.hiddenCostItem}>
-                      <span className={s.hiddenCostLabel}>No-Shows</span>
-                      <span className={s.hiddenCostValue}>₹2.1L</span>
-                    </div>
-                    <div className={s.hiddenCostItem}>
-                      <span className={s.hiddenCostLabel}>After-Hours</span>
-                      <span className={s.hiddenCostValue}>₹2.8L</span>
+                
+                <div className={s.convoMessages}>
+                  <div className={`${s.messageRow} ${s.messageRight}`}>
+                    <div className={s.messageBubble}>
+                      <span className={s.msgTag}>[CALLER]</span>
+                      <span>&quot;Hi, I need to book an appointment for tomorrow...&quot;</span>
                     </div>
                   </div>
+                  <div className={`${s.messageRow} ${s.messageLeft}`}>
+                    <div className={s.messageBubble}>
+                      <span className={s.msgTagAI}>[AI]</span>
+                      <span>&quot;Of course! I have openings at 11 AM and 3 PM. Which works better?&quot;</span>
+                      <span className={s.msgLatency}>380ms</span>
+                    </div>
+                  </div>
+                  <div className={`${s.messageRow} ${s.messageRight}`}>
+                    <div className={s.messageBubble}>
+                      <span className={s.msgTag}>[CALLER]</span>
+                      <span>&quot;3 PM please. What are your charges?&quot;</span>
+                    </div>
+                  </div>
+                  <div className={`${s.messageRow} ${s.messageLeft}`}>
+                    <div className={s.messageBubble}>
+                      <span className={s.msgTagAI}>[AI]</span>
+                      <span>&quot;Our consultation fee is ₹1,500. Shall I confirm the slot?&quot;</span>
+                      <span className={s.msgLatency}>410ms</span>
+                    </div>
+                  </div>
+                  <div className={`${s.messageRow} ${s.messageRight}`}>
+                    <div className={s.messageBubble}>
+                      <span className={s.msgTag}>[CALLER]</span>
+                      <span>&quot;Yes, go ahead.&quot;</span>
+                    </div>
+                  </div>
+                  <div className={`${s.messageRow} ${s.messageLeft}`}>
+                    <div className={s.messageBubble}>
+                      <span className={s.msgTagAI}>[AI]</span>
+                      <span>&quot;Booked for 3 PM tomorrow. Confirmation SMS sent. Anything else?&quot;</span>
+                      <span className={s.msgLatency}>420ms</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={s.convoStatus}>
+                  <span className={s.convoStatusItem}><span className={s.convoStatusDot} /> Booked</span>
+                  <span className={s.convoStatusItem}><span className={s.convoStatusDot} /> SMS Sent</span>
+                  <span className={s.convoStatusItem}><span className={s.convoStatusDot} /> Calendar Updated</span>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ─── SOLUTION ────────────────────────────────── */}
+        {/* ─── SOLUTION: Stats Only ────────────────────────────── */}
         <section className={s.solutionSection}>
           <h2 className={`${s.sectionTitle} ${s.reveal}`}>
             Your 24/7<br /><span className={s.textAccent}>AI Receptionist.</span>
@@ -379,61 +389,16 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Conversation Log with Before/After layout */}
-          <div className={`${s.conversationLog} ${s.reveal}`}>
-            <div className={s.convoHeader}>
-              <div className={s.convoDot} />
-              <span className={s.convoLabel}>Live Communication Log</span>
-            </div>
-            
-            {/* Caller messages on the RIGHT, AI on the LEFT */}
-            <div className={s.convoMessages}>
-              <div className={`${s.messageRow} ${s.messageRight}`}>
-                <div className={s.messageBubble}>
-                  <span className={s.msgTag}>[CALLER]</span>
-                  <span>&quot;Hi, I need to book an appointment for tomorrow...&quot;</span>
-                </div>
-              </div>
-              <div className={`${s.messageRow} ${s.messageLeft}`}>
-                <div className={s.messageBubble}>
-                  <span className={s.msgTagAI}>[AI]</span>
-                  <span>&quot;Of course! I have openings at 11 AM and 3 PM. Which works better?&quot;</span>
-                  <span className={s.msgLatency}>380ms</span>
-                </div>
-              </div>
-              <div className={`${s.messageRow} ${s.messageRight}`}>
-                <div className={s.messageBubble}>
-                  <span className={s.msgTag}>[CALLER]</span>
-                  <span>&quot;3 PM please. What are your charges?&quot;</span>
-                </div>
-              </div>
-              <div className={`${s.messageRow} ${s.messageLeft}`}>
-                <div className={s.messageBubble}>
-                  <span className={s.msgTagAI}>[AI]</span>
-                  <span>&quot;Our consultation fee is ₹1,500. Shall I confirm the slot?&quot;</span>
-                  <span className={s.msgLatency}>410ms</span>
-                </div>
-              </div>
-              <div className={`${s.messageRow} ${s.messageRight}`}>
-                <div className={s.messageBubble}>
-                  <span className={s.msgTag}>[CALLER]</span>
-                  <span>&quot;Yes, go ahead.&quot;</span>
-                </div>
-              </div>
-              <div className={`${s.messageRow} ${s.messageLeft}`}>
-                <div className={s.messageBubble}>
-                  <span className={s.msgTagAI}>[AI]</span>
-                  <span>&quot;Booked for 3 PM tomorrow. Confirmation SMS sent. Anything else?&quot;</span>
-                  <span className={s.msgLatency}>420ms</span>
-                </div>
-              </div>
-            </div>
-
-            <div className={s.convoStatus}>
-              <span className={s.convoStatusItem}><span className={s.convoStatusDot} /> Booked</span>
-              <span className={s.convoStatusItem}><span className={s.convoStatusDot} /> SMS Sent</span>
-              <span className={s.convoStatusItem}><span className={s.convoStatusDot} /> Calendar Updated</span>
-            </div>
+          {/* Experience it live CTA */}
+          <div className={`${s.solutionCta} ${s.reveal}`}>
+            <a href="/demo" className={s.btnPrimary} data-hover>
+              Experience It Live
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <path d="M12 19v3" />
+              </svg>
+            </a>
           </div>
         </section>
 

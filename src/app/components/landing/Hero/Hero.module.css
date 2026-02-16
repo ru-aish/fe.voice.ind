@@ -1,21 +1,21 @@
 /* ============================================================
    HERO SECTION
-   Desktop: 2-column grid (text left, visualizer right)
-   Mobile (<1100px): Single column, visualizer hidden
+   Desktop: 2-column grid (text left, calculator right)
+   Mobile (<1100px): Single column, calculator hidden
    ============================================================ */
 
 .hero {
-  min-height: 90vh;
+  min-height: auto;
   padding: clamp(3rem, 8vh, 8rem) 0 clamp(2rem, 6vh, 6rem);
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: clamp(2rem, 8vw, 8rem);
+  gap: clamp(2rem, 5vw, 4rem);
   align-items: stretch;
   position: relative;
   z-index: 10;
 }
 
-/* ─── Visualizer Column ─── */
+/* ─── Calculator Column ─── */
 .heroVisualizer {
   display: flex;
   height: 100%;

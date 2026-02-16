@@ -213,9 +213,8 @@
 
 
 /* ============================================================
-   VOICE WAVE VISUALIZER (Moved to Component)
+   (WaveVisualizer removed — replaced by Calculator in Hero)
    ============================================================ */
-/* Styles moved to src/app/components/landing/WaveVisualizer/WaveVisualizer.module.css */
 
 
 
@@ -266,136 +265,56 @@
   margin-bottom: 2.5rem;
 }
 
-/* Chaos Timeline */
-.chaosTimeline {
-  position: relative;
-  padding-left: 1rem;
-  margin-bottom: 3rem;
-}
-.chaosTimeline::before {
-  content: '';
-  position: absolute;
-  left: 68px;
-  top: 8px;
-  bottom: 8px;
-  width: 1px;
-  background: var(--border-subtle);
-}
-.chaosItem {
+/* Chaos Timeline — removed, replaced by Impact List */
+
+/* Impact List - Spacious "igloo" cards */
+.impactList {
   display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 0;
-}
-.chaosTime {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  width: 55px;
-  flex-shrink: 0;
-  text-align: right;
-}
-.chaosDot {
-  width: 8px; height: 8px;
-  background: var(--border-subtle);
-  border-radius: 50%;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 1;
-}
-.chaosDotDanger {
-  background: var(--danger);
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
-}
-.chaosContent {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  font-size: clamp(0.85rem, 1.5vw, 0.95rem);
-  color: var(--text-muted);
-}
-.chaosTag {
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--accent);
-  border: 1px solid rgba(204, 255, 0, 0.3);
-  padding: 0.15rem 0.5rem;
-  border-radius: 50px;
-}
-.chaosTagDanger {
-  color: var(--danger);
-  border-color: rgba(239, 68, 68, 0.3);
-}
-.chaosItemResult {
+  flex-direction: column;
+  gap: 1.5rem;
   margin-top: 0.5rem;
 }
-
-/* Chain Reaction */
-.chainReaction {
-  margin-top: 1rem;
-}
-.chainTitle {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 1rem;
-  margin-bottom: 1rem;
-  text-transform: uppercase;
-  letter-spacing: -0.01em;
-}
-.chainItem {
-  border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  margin-bottom: 0.5rem;
-  overflow: hidden;
+.impactItem {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.5rem 1.75rem;
   background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
   transition: var(--transition-smooth);
 }
-@media (hover: hover) {
-  .chainItem:hover { border-color: rgba(204, 255, 0, 0.2); }
+.impactItem:hover {
+  border-color: rgba(239, 68, 68, 0.3);
+  transform: translateX(4px);
 }
-.chainBtn {
-  width: 100%;
-  padding: 0.85rem 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: none; border: none;
-  color: var(--text-main);
-  font-family: var(--font-body);
-  font-size: clamp(0.85rem, 1.5vw, 0.95rem);
-  text-align: left;
-  cursor: pointer;
-  gap: 1rem;
+.impactStat {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  color: var(--danger);
+  line-height: 1;
+  flex-shrink: 0;
+  min-width: 4rem;
 }
-.chainBtnOpen { color: var(--accent); }
-.chainArrow {
-  font-size: 0.65rem;
-  color: var(--accent);
-  transition: transform 0.3s ease;
-}
-.chainBtnOpen .chainArrow { transform: rotate(180deg); }
-.chainAnswer {
-  padding: 0 1rem 1rem;
+.impactText {
   color: var(--text-muted);
-  font-size: clamp(0.85rem, 1.4vw, 0.9rem);
-  line-height: 1.7;
+  font-size: clamp(0.9rem, 1.5vw, 1rem);
+  line-height: 1.6;
+  margin: 0;
 }
 
 /* Calculator Box */
 .calcBox {
   background: var(--bg-surface);
-  padding: clamp(2rem, 5vw, 3rem);
+  padding: clamp(1.75rem, 4vw, 2.5rem);
   border: 1px solid var(--border-subtle);
   border-radius: 24px;
-  height: 100%;
+  width: 100%;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  box-sizing: border-box;
 }
 .calcBoxTitle {
   font-family: var(--font-display);
@@ -403,9 +322,9 @@
   font-size: clamp(1.1rem, 2vw, 1.3rem);
   text-transform: uppercase;
   letter-spacing: -0.01em;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
-.sliderGroup { margin-bottom: clamp(1.5rem, 3vw, 2rem); }
+.sliderGroup { margin-bottom: clamp(1rem, 2vw, 1.25rem); }
 .sliderHeader {
   display: flex;
   justify-content: space-between;
@@ -448,8 +367,8 @@
   border-radius: 3px;
 }
 .resultBox {
-  margin-top: clamp(1.5rem, 4vw, 2.5rem);
-  padding-top: clamp(1.5rem, 3vw, 2rem);
+  margin-top: clamp(1rem, 2.5vw, 1.5rem);
+  padding-top: clamp(1rem, 2vw, 1.25rem);
   border-top: 1px dashed var(--border-subtle);
 }
 .resultLabel {
@@ -467,23 +386,26 @@
   color: var(--accent);
   line-height: 1;
   white-space: nowrap;
+  min-height: 1.2em;
+  display: flex;
+  align-items: center;
 }
 
 /* Calculator Insight Box */
 .calcInsightBox {
-  margin: 1.5rem 0;
-  padding: 1.25rem 1.5rem;
+  margin: 1rem 0;
+  padding: 1rem 1.25rem;
   background: rgba(204, 255, 0, 0.08);
   border: 1px solid rgba(204, 255, 0, 0.2);
   border-radius: 12px;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .calcInsightIcon {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   background: var(--accent);
   color: var(--bg-base);
   border-radius: 50%;
@@ -492,21 +414,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  font-size: 1rem;
   flex-shrink: 0;
 }
 
 .calcInsightText {
   color: var(--text-main);
-  font-size: clamp(0.95rem, 1.5vw, 1.05rem);
+  font-size: clamp(0.9rem, 1.4vw, 1rem);
   margin: 0;
   line-height: 1.4;
 }
 
 /* Hidden Costs Grid */
 .hiddenCosts {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
   border-top: 1px solid var(--border-subtle);
 }
 .hiddenCostsTitle {
@@ -515,18 +437,18 @@
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--text-muted);
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 .hiddenCostsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: clamp(0.5rem, 1.5vw, 0.75rem);
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
 }
 .hiddenCostItem {
   background: rgba(255,255,255,0.03);
   border: 1px solid var(--border-subtle);
   border-radius: 10px;
-  padding: 0.75rem;
+  padding: 0.65rem;
   text-align: center;
 }
 .hiddenCostLabel {
@@ -575,7 +497,6 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: clamp(0.875rem, 2vw, 1.5rem);
-  margin-bottom: clamp(2rem, 5vw, 5rem);
 }
 .statCard {
   background: var(--bg-surface);
@@ -604,14 +525,36 @@
   letter-spacing: 0.08em;
 }
 
+/* Solution CTA Button */
+.solutionCta {
+  display: flex;
+  justify-content: center;
+  margin-top: clamp(2.5rem, 5vw, 4rem);
+}
+.solutionCta .btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: clamp(0.875rem, 2vw, 1.125rem) clamp(2rem, 4vw, 3rem);
+  font-size: clamp(0.8rem, 1.5vw, 0.95rem);
+}
+
+/* Conversation Log Column */
+.convoColumn {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 /* Conversation Log — Redesigned with Before/After */
 .conversationLog {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: 16px;
   padding: clamp(1.5rem, 4vw, 3rem);
-  max-width: 760px;
-  margin: 0 auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 .convoHeader {
   display: flex;
@@ -638,6 +581,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .messageRow {
@@ -1422,7 +1367,7 @@
   }
 
   /* Hide conversation log on mobile */
-  .conversationLog {
+  .convoColumn {
     display: none;
   }
 
@@ -1547,48 +1492,21 @@
     text-align: center;
   }
 
-  .chaosTimeline {
-    padding-left: 0;
-    margin-bottom: 1.5rem;
-  }
-
-  .chaosTimeline::before {
-    left: 50px;
-  }
-
-  .chaosItem {
+  .impactList {
     gap: 0.75rem;
-    padding: 0.5rem 0;
   }
 
-  .chaosTime {
-    width: 42px;
-    font-size: 0.6rem;
+  .impactItem {
+    padding: 0.85rem 1rem;
   }
 
-  .chaosContent {
+  .impactStat {
+    font-size: 1.2rem;
+    min-width: 3rem;
+  }
+
+  .impactText {
     font-size: 0.85rem;
-  }
-
-  .chaosTag {
-    font-size: 0.55rem;
-    padding: 0.1rem 0.4rem;
-  }
-
-  .chainTitle {
-    font-size: 0.9rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .chainBtn {
-    padding: 0.75rem 1rem;
-    font-size: 0.85rem;
-    min-height: 48px;
-  }
-
-  .chainAnswer {
-    font-size: 0.85rem;
-    padding: 0 1rem 1rem;
   }
 
   .calcBox {
@@ -1831,19 +1749,6 @@
     text-align: center;
   }
 
-  .chaosTimeline::before {
-    left: 45px;
-  }
-
-  .chaosTime {
-    width: 38px;
-    font-size: 0.55rem;
-  }
-
-  .chaosContent {
-    font-size: 0.8rem;
-  }
-
   .calcBox {
     padding: 1.25rem;
   }
@@ -1926,22 +1831,18 @@
     text-align: center;
   }
 
-  .chaosTimeline::before {
-    left: 42px;
+  .impactItem {
+    padding: 0.75rem 0.875rem;
+    gap: 0.75rem;
   }
 
-  .chaosTime {
-    width: 35px;
-    font-size: 0.5rem;
+  .impactStat {
+    font-size: 1.1rem;
+    min-width: 2.5rem;
   }
 
-  .chaosContent {
-    font-size: 0.75rem;
-  }
-
-  .chainBtn {
+  .impactText {
     font-size: 0.8rem;
-    padding: 0.625rem 0.875rem;
   }
 
   .resultNumber {
