@@ -14,7 +14,7 @@ export default function Hero({ revealClass, children }: HeroProps) {
     <header className={s.hero}>
       {/* Left Column: Content */}
       <div className={`${s.heroContent} ${revealClass || ''}`}>
-        <div className={s.heroLabel} data-hover>AI Receptionist v2.0</div>
+
         
         <h1 className={s.heroTitle}>
           Stop Losing<br />

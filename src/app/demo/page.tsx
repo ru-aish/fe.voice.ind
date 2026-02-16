@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import type { AudioOrb3DHandle } from '../components/AudioOrb3D/AudioOrb3D';
 
@@ -8,6 +8,15 @@ const AudioOrb3D = dynamic(() => import('../components/AudioOrb3D/AudioOrb3D'), 
 
 export default function DemoPage() {
   const audioOrbRef = useRef<AudioOrb3DHandle>(null);
+  
+  // Wake up the Render server on load
+  useEffect(() => {
+    try {
+      fetch('https://voice-ind.onrender.com/', { mode: 'no-cors' }).catch(() => {});
+    } catch (e) {
+      // Ignore errors
+    }
+  }, []);
 
   return (
     <div style={{

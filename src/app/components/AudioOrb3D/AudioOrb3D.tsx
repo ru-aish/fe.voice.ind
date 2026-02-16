@@ -102,7 +102,7 @@ const AudioOrb3D = forwardRef<AudioOrb3DHandle>((_, ref) => {
       ref={containerRef} 
       style={{ 
         width: '100%', 
-        height: '100vh',
+        height: '100dvh',
         background: '#050505',
         position: 'relative'
       }}

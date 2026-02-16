@@ -106,7 +106,7 @@ export class GdmLiveAudio extends LitElement {
     :host {
       display: block;
       width: 100%;
-      height: 100vh;
+      height: 100dvh;
       background: #050505;
       margin: 0;
       padding: 0;
@@ -132,7 +132,7 @@ export class GdmLiveAudio extends LitElement {
     .controls {
       z-index: 10;
       position: absolute;
-      bottom: 9vh;
+      bottom: calc(10vh + env(safe-area-inset-bottom, 20px));
       left: 0;
       right: 0;
       display: flex;
@@ -344,6 +344,75 @@ export class GdmLiveAudio extends LitElement {
       padding: 2px 0;
       border-bottom: 1px solid rgba(255, 255, 255, 0.03);
       color: rgba(200, 240, 225, 0.65);
+    }
+
+    /* ---- Language Selector ---- */
+    .language-selector {
+      position: absolute;
+      top: 12vh;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      background: rgba(20, 20, 20, 0.6); /* Darker glassy base */
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 9999px;
+      padding: 4px;
+      z-index: 20;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .lang-btn {
+      background: transparent;
+      color: rgba(255, 255, 255, 0.5);
+      border: none;
+      padding: 8px 18px;
+      border-radius: 9999px;
+      cursor: pointer;
+      font-family: 'Instrument Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .lang-btn:hover {
+      color: rgba(255, 255, 255, 0.8);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .lang-btn.active {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 2px 8px rgba(0, 0, 0, 0.1);
+      font-weight: 600;
+    }
+
+    .lang-divider {
+      width: 1px;
+      height: 14px;
+      background: rgba(255, 255, 255, 0.1);
+      margin: 0 2px;
+    }
+
+    .desktop-text { display: inline; }
+    .mobile-text { display: none; }
+
+    @media (max-width: 600px) {
+      .language-selector {
+        top: 14vh;
+        padding: 3px;
+      }
+      .lang-btn {
+        padding: 8px 14px;
+        font-size: 12px;
+      }
+      .desktop-text { display: none; }
+      .mobile-text { display: inline; }
     }
   `;
 
@@ -1304,6 +1373,25 @@ export class GdmLiveAudio extends LitElement {
     }) as EventListener);
   }
 
+  private async setLanguage(langCode: 'hi-IN' | 'gu-IN' | 'en-IN') {
+    if (this.currentSettings.languageCode === langCode) return;
+
+    this.infoLog(`[VoiceAI] Switching language to ${langCode}`);
+    
+    // Update settings internally
+    const newSettings = { ...this.currentSettings, languageCode: langCode };
+    this.currentSettings = newSettings;
+
+    // Reset session to force reconnect with new language
+    this.reset();
+    
+    // Auto-start connection process (but not recording yet, let user click mic)
+    // Or we could stay disconnected. User requested "session resets".
+    // Let's just update the status to indicate readiness in new language.
+    const langName = langCode === 'hi-IN' ? 'Hindi' : langCode === 'gu-IN' ? 'Gujarati' : 'English';
+    this.updateStatus(`Language set to ${langName}. Click mic to start.`);
+  }
+
   disconnectedCallback() {
     if (this.voiceSocket) {
       this.voiceSocket.disconnect();
@@ -1351,6 +1439,32 @@ export class GdmLiveAudio extends LitElement {
             </svg>
           </button>
         ` : ''}
+
+        <div class="language-selector">
+          <button 
+            class="lang-btn ${this.currentSettings.languageCode === 'hi-IN' ? 'active' : ''}" 
+            @click=${() => this.setLanguage('hi-IN')}
+          >
+            <span class="desktop-text">Hindi</span>
+            <span class="mobile-text">Hin</span>
+          </button>
+          <div class="lang-divider"></div>
+          <button 
+            class="lang-btn ${this.currentSettings.languageCode === 'gu-IN' ? 'active' : ''}" 
+            @click=${() => this.setLanguage('gu-IN')}
+          >
+            <span class="desktop-text">Gujarati</span>
+            <span class="mobile-text">Guj</span>
+          </button>
+          <div class="lang-divider"></div>
+          <button 
+            class="lang-btn ${this.currentSettings.languageCode === 'en-IN' ? 'active' : ''}" 
+            @click=${() => this.setLanguage('en-IN')}
+          >
+            <span class="desktop-text">English</span>
+            <span class="mobile-text">Eng</span>
+          </button>
+        </div>
 
         ${this.ccVisible && this.ccChunks.length > 0 && this.ccCurrentIndex >= 0 ? html`
           <div class="cc-container">

@@ -237,6 +237,8 @@
   flex-direction: column;
   justify-content: center;
   height: 100%;
+  align-items: center;
+  text-align: center;
 }
 
 .calcColumn {
@@ -273,6 +275,8 @@
   flex-direction: column;
   gap: 1.5rem;
   margin-top: 0.5rem;
+  width: 100%;
+  max-width: 500px;
 }
 .impactItem {
   display: flex;
@@ -283,6 +287,8 @@
   border: 1px solid var(--border-subtle);
   border-radius: 16px;
   transition: var(--transition-smooth);
+  width: 100%;
+  box-sizing: border-box;
 }
 .impactItem:hover {
   border-color: rgba(239, 68, 68, 0.3);
@@ -495,8 +501,15 @@
 }
 .statsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: clamp(0.875rem, 2vw, 1.5rem);
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .statsGrid {
+    grid-template-columns: repeat(1, 1fr);
+  }
 }
 .statCard {
   background: var(--bg-surface);
@@ -505,6 +518,12 @@
   padding: clamp(1.5rem, 3vw, 2.5rem);
   text-align: center;
   transition: var(--transition-smooth);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
 }
 @media (hover: hover) {
   .statCard:hover { border-color: var(--accent); transform: translateY(-4px); }
