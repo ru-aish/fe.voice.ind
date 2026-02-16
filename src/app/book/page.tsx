@@ -1,13 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import s from './styles.module.css';
-
-// ─── Time Slots (static — no API dependency) ───────────────────
-const TIME_SLOTS = [
-  '09:00', '10:00', '11:00', '12:00',
-  '14:00', '15:00', '16:00', '17:00',
-];
 
 const formatTime = (t: string) => {
   const [h, m] = t.split(':').map(Number);
@@ -61,6 +55,11 @@ export default function BookingPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Availability
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+  const [slotsError, setSlotsError] = useState<string | null>(null);
+
   // Calendar helpers
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -79,6 +78,34 @@ export default function BookingPage() {
 
   const isSameDay = (a: Date, b: Date) =>
     a.getDate() === b.getDate() && a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
+
+  const fetchAvailability = useCallback(async (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    setIsLoadingSlots(true);
+    setSlotsError(null);
+    setAvailableSlots([]);
+
+    try {
+      const response = await fetch(`/api/calendar/availability?date=${dateStr}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setAvailableSlots(data.availableSlots);
+      } else {
+        setSlotsError(data.error || 'Failed to load available slots');
+      }
+    } catch {
+      setSlotsError('Unable to check availability. Please try again.');
+    } finally {
+      setIsLoadingSlots(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedDate) {
+      fetchAvailability(selectedDate);
+    }
+  }, [selectedDate, fetchAvailability]);
 
   const renderCalendar = () => {
     const { daysInMonth, startingDay } = getDaysInMonth(currentMonth);
@@ -136,9 +163,25 @@ export default function BookingPage() {
     setError(null);
 
     try {
-      // TODO: Replace with real booking API call once endpoint is available.
-      await new Promise((r) => setTimeout(r, 1500));
-      setSuccess(true);
+      const dateStr = selectedDate.toISOString().split('T')[0];
+      const response = await fetch('/api/calendar/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadName: name.trim(),
+          email: email.trim(),
+          date: dateStr,
+          time: selectedTime,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSuccess(true);
+      } else {
+        setError(data.error || 'Booking failed. Please try again.');
+      }
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
@@ -357,18 +400,29 @@ export default function BookingPage() {
                     {selectedDate.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })}
                     {' '}&mdash; 30 min slots
                   </div>
-                  <div className={s.timeGrid}>
-                    {TIME_SLOTS.map((t) => (
-                      <button
-                        key={t}
-                        type="button"
-                        className={`${s.timeSlot} ${selectedTime === t ? s.timeSlotSel : ''}`}
-                        onClick={() => { setSelectedTime(t); setError(null); }}
-                      >
-                        {formatTime(t)}
-                      </button>
-                    ))}
-                  </div>
+                  {isLoadingSlots ? (
+                    <div className={s.timeGrid}>
+                      <span className={s.spinner} />
+                      <span style={{ marginLeft: '8px' }}>Loading available slots...</span>
+                    </div>
+                  ) : slotsError ? (
+                    <div className={s.errorMsg}>{slotsError}</div>
+                  ) : availableSlots.length === 0 ? (
+                    <div className={s.errorMsg}>No slots available for this date. Please select another date.</div>
+                  ) : (
+                    <div className={s.timeGrid}>
+                      {availableSlots.map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          className={`${s.timeSlot} ${selectedTime === t ? s.timeSlotSel : ''}`}
+                          onClick={() => { setSelectedTime(t); setError(null); }}
+                        >
+                          {formatTime(t)}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
