@@ -154,8 +154,12 @@ export default function BookingPage() {
       setError('Please enter a valid email address.');
       return;
     }
-    if (!selectedDate || !selectedTime) {
-      setError('Please select a date and time.');
+    if (!selectedDate) {
+      setError('Please select a date.');
+      return;
+    }
+    if (!selectedTime) {
+      setError('Please select a time.');
       return;
     }
 
@@ -400,12 +404,12 @@ export default function BookingPage() {
                     {selectedDate.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })}
                     {' '}&mdash; 30 min slots
                   </div>
-                  {isLoadingSlots ? (
-                    <div className={s.timeGrid}>
-                      <span className={s.spinner} />
-                      <span style={{ marginLeft: '8px' }}>Loading available slots...</span>
-                    </div>
-                  ) : slotsError ? (
+                   {isLoadingSlots ? (
+                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.6rem 0.25rem' }}>
+                       <span className={s.spinner} />
+                       <span>Loading available slots...</span>
+                     </div>
+                   ) : slotsError ? (
                     <div className={s.errorMsg}>{slotsError}</div>
                   ) : availableSlots.length === 0 ? (
                     <div className={s.errorMsg}>No slots available for this date. Please select another date.</div>
