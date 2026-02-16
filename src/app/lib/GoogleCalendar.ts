@@ -72,6 +72,25 @@ export interface CalendarBookingResult {
 }
 
 /**
+ * Centralized time slot definitions
+ * These are the standard appointment slots available for booking
+ */
+export const TIME_SLOTS = {
+  morning: ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30'],
+  afternoon: ['13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'],
+  evening: ['17:00', '17:30', '18:00', '18:30'],
+} as const;
+
+/**
+ * All available time slots combined
+ */
+export const ALL_TIME_SLOTS: readonly string[] = [
+  ...TIME_SLOTS.morning,
+  ...TIME_SLOTS.afternoon,
+  ...TIME_SLOTS.evening,
+];
+
+/**
  * Google Calendar Service Class
  * Uses Service Account for authentication (no token expiry, no OAuth verification needed)
  */
@@ -119,14 +138,19 @@ export class GoogleCalendarService {
     // Initialize Calendar API client with Service Account auth
     this.calendar = google.calendar({ version: 'v3', auth });
 
-    // Validate configuration
+    // Validate configuration - GOOGLE_CALENDAR_ID is required
+    // 'primary' refers to the service account's own calendar, which is typically empty
+    // and not visible to the business owner, leading to "silent failures"
     if (!process.env.GOOGLE_CALENDAR_ID) {
-       console.warn('⚠️ GOOGLE_CALENDAR_ID not set. Defaulting to "primary" which may not be the intended calendar for Service Account.');
+      throw new Error(
+        'GOOGLE_CALENDAR_ID environment variable is required. ' +
+        'For service accounts, use the email address of the calendar to manage.'
+      );
     }
   }
 
   private get calendarId(): string {
-     return process.env.GOOGLE_CALENDAR_ID || 'primary';
+     return process.env.GOOGLE_CALENDAR_ID!;
   }
 
   /**
@@ -154,6 +178,7 @@ export class GoogleCalendarService {
       const event: calendar_v3.Schema$Event = {
         summary: `Demo with ${params.leadName}${params.company ? ` - ${params.company}` : ''}`,
         description: this.buildEventDescription(params),
+        attendees: [{ email: params.email }],
         start: {
           dateTime: startDateTime,
           timeZone: params.timezone || 'Asia/Kolkata',
@@ -178,7 +203,7 @@ export class GoogleCalendarService {
       const response = await this.calendar.events.insert({
         calendarId: this.calendarId,
         requestBody: event,
-        sendUpdates: 'none',
+        sendUpdates: 'all',
       });
 
       console.log('✅ Calendar event created:', response.data.id);
@@ -218,15 +243,14 @@ export class GoogleCalendarService {
         requestBody: {
           timeMin: startDateTime,
           timeMax: endDateTime,
-          items: [{ id: process.env.GOOGLE_CALENDAR_ID || 'primary' }],
+          items: [{ id: this.calendarId }],
         },
       });
 
       const calendars = response.data.calendars;
       if (!calendars) return true;
 
-      const calendarId = process.env.GOOGLE_CALENDAR_ID || 'primary';
-      const busy = calendars[calendarId]?.busy || [];
+      const busy = calendars[this.calendarId]?.busy || [];
 
       return busy.length === 0; // Available if no busy periods
     } catch (error) {
@@ -266,22 +290,40 @@ export class GoogleCalendarService {
 
   /**
    * Get available time slots for a given date
+   * Optimized: Fetches busy periods once and filters locally
    */
   async getAvailableSlots(
     date: string,
-    timePreference: 'morning' | 'afternoon' | 'evening' | 'any' = 'any'
+    timePreference: 'morning' | 'afternoon' | 'evening' | 'any' = 'any',
+    timezone: string = 'Asia/Kolkata'
   ): Promise<string[]> {
     const slots = this.generateTimeSlots(timePreference);
-    const availableSlots: string[] = [];
+    if (slots.length === 0) return [];
 
-    for (const slot of slots) {
-      const isAvailable = await this.checkAvailability(date, slot);
-      if (isAvailable) {
-        availableSlots.push(slot);
-      }
-    }
+    // Calculate time range for the entire day
+    const firstSlot = slots[0];
+    const lastSlot = slots[slots.length - 1];
+    
+    const startOfRange = getZonedDate(date, firstSlot, timezone);
+    const endOfRange = new Date(getZonedDate(date, lastSlot, timezone).getTime() + 60 * 60000);
 
-    return availableSlots;
+    // Fetch all busy periods for the entire day in a single API call
+    const busyPeriods = await this.getBusyPeriods(
+      startOfRange.toISOString(),
+      endOfRange.toISOString()
+    );
+
+    // Filter slots locally
+    return slots.filter(slot => {
+      const slotStart = getZonedDate(date, slot, timezone).getTime();
+      const slotEnd = slotStart + 60 * 60000;
+      
+      return !busyPeriods.some(period => {
+        const busyStart = new Date(period.start).getTime();
+        const busyEnd = new Date(period.end).getTime();
+        return Math.max(slotStart, busyStart) < Math.min(slotEnd, busyEnd);
+      });
+    });
   }
 
   /**
@@ -335,18 +377,12 @@ export class GoogleCalendarService {
    * Generate time slots based on preference
    */
   private generateTimeSlots(preference: 'morning' | 'afternoon' | 'evening' | 'any'): string[] {
-    const allSlots = {
-      morning: ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30'],
-      afternoon: ['13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'],
-      evening: ['17:00', '17:30', '18:00', '18:30'],
-    };
-
-    if (preference === 'morning') return allSlots.morning;
-    if (preference === 'afternoon') return allSlots.afternoon;
-    if (preference === 'evening') return allSlots.evening;
+    if (preference === 'morning') return [...TIME_SLOTS.morning];
+    if (preference === 'afternoon') return [...TIME_SLOTS.afternoon];
+    if (preference === 'evening') return [...TIME_SLOTS.evening];
 
     // 'any' - return all slots
-    return [...allSlots.morning, ...allSlots.afternoon, ...allSlots.evening];
+    return [...ALL_TIME_SLOTS];
   }
 }
 

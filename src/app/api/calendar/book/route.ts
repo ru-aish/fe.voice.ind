@@ -49,7 +49,10 @@ export async function POST(request: NextRequest) {
   
   try {
     // Rate limiting
-    const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    // x-forwarded-for can contain a comma-separated list of IPs; take the first one
+    const clientIp = (request.headers.get('x-forwarded-for') || '').split(',')[0].trim() 
+      || request.headers.get('x-real-ip') 
+      || 'unknown';
     console.log(`   Client IP: ${clientIp}`);
     
     if (!checkRateLimit(clientIp)) {
@@ -87,7 +90,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!email || typeof email !== 'string' || !email.includes('@')) {
+    if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json(
         { success: false, error: 'Invalid or missing email address' },
         { status: 400 }

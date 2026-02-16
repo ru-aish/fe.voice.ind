@@ -5,23 +5,36 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCalendarService, getZonedDate } from '@/app/lib/GoogleCalendar';
-
-// All possible time slots (30-min intervals from 9 AM to 6 PM)
-const ALL_TIME_SLOTS = [
-    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-    '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
-    '16:00', '16:30', '17:00', '17:30', '18:00'
-];
+import { getCalendarService, getZonedDate, ALL_TIME_SLOTS } from '@/app/lib/GoogleCalendar';
 
 // Duration of each appointment in minutes
 const APPOINTMENT_DURATION = 30;
+
+/**
+ * Validates if a string is a valid IANA timezone identifier
+ */
+function isValidTimezone(timezone: string): boolean {
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: timezone });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const date = searchParams.get('date');
         const timezone = searchParams.get('timezone') || 'Asia/Kolkata';
+
+        // Validate timezone parameter
+        if (!isValidTimezone(timezone)) {
+            return NextResponse.json(
+                { success: false, error: 'Invalid timezone. Please provide a valid IANA timezone identifier.' },
+                { status: 400 }
+            );
+        }
 
         // Validate date parameter
         if (!date) {
