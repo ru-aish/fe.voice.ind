@@ -187,9 +187,12 @@
     min-height: auto;
   }
 
-  /* HIDE the visualizer */
+  /* Show the visualizer */
   .heroVisualizer {
-    display: none !important;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-top: 2rem;
   }
 
   .heroContent {
