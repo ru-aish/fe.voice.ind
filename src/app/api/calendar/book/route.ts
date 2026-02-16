@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCalendarService } from '@/app/lib/GoogleCalendar';
+import { getCalendarService, getZonedDate } from '@/app/lib/GoogleCalendar';
 import type { CalendarBookingParams } from '@/app/lib/GoogleCalendar';
 
 // Rate limiting (simple in-memory implementation)
@@ -16,6 +16,15 @@ const RATE_WINDOW = 60 * 1000; // 1 minute
 function checkRateLimit(identifier: string): boolean {
   const now = Date.now();
   const record = requestCounts.get(identifier);
+
+  // Occasional cleanup (probabilistic to avoid perf hit)
+  if (Math.random() < 0.05) { // 5% chance to cleanup
+    for (const [key, val] of requestCounts.entries()) {
+      if (now > val.resetTime) {
+        requestCounts.delete(key);
+      }
+    }
+  }
 
   if (!record || now > record.resetTime) {
     requestCounts.set(identifier, { count: 1, resetTime: now + RATE_WINDOW });
@@ -54,14 +63,20 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-    console.log(`   📋 Request body:`, JSON.stringify(body, null, 2));
+    
+    // Redact PII in logs
+    const logBody = { ...body };
+    if (logBody.email) logBody.email = '[REDACTED]';
+    if (logBody.phone) logBody.phone = '[REDACTED]';
+    if (logBody.leadName) logBody.leadName = '[REDACTED]';
+    console.log(`   📋 Request body (redacted):`, JSON.stringify(logBody, null, 2));
 
     // Validate required fields
     const { leadName, email, date, time } = body;
     
     console.log(`   🔍 Validating required fields...`);
-    console.log(`      leadName: ${leadName ? '✅' : '❌'} (${leadName})`);
-    console.log(`      email: ${email ? '✅' : '❌'} (${email})`);
+    console.log(`      leadName: ${leadName ? '✅' : '❌'}`);
+    console.log(`      email: ${email ? '✅' : '❌'}`);
     console.log(`      date: ${date ? '✅' : '❌'} (${date})`);
     console.log(`      time: ${time ? '✅' : '❌'} (${time})`);
 
@@ -97,6 +112,15 @@ export async function POST(request: NextRequest) {
     const userTimezone = body.timezone || body.userTimezone || 'Asia/Kolkata';
     console.log(`   🌍 User timezone: ${userTimezone}`);
     
+    // Strict duration validation
+    const durationInput = body.duration ? String(body.duration) : '30';
+    if (!/^\d+$/.test(durationInput)) {
+         return NextResponse.json(
+            { success: false, error: 'Invalid duration.' },
+            { status: 400 }
+        );
+    }
+
     // Sanitize inputs
     const bookingParams: CalendarBookingParams = {
       leadName: leadName.trim().substring(0, 100),
@@ -105,22 +129,21 @@ export async function POST(request: NextRequest) {
       company: body.company ? String(body.company).trim().substring(0, 100) : undefined,
       date: date.trim(),
       time: time.trim(),
-      duration: body.duration ? String(body.duration) : '60',
+      duration: durationInput,
       notes: body.notes ? String(body.notes).trim().substring(0, 500) : undefined,
       timezone: userTimezone,
     };
 
     // Validate date is not in the past
-    const bookingDateStr = `${bookingParams.date}T${bookingParams.time}:00`;
-    console.log(`   📅 Booking datetime string: ${bookingDateStr}`);
-    
-    const bookingDate = new Date(bookingDateStr);
+    // Use getZonedDate to interpret the date in the user's timezone correctly
+    const bookingDate = getZonedDate(bookingParams.date, bookingParams.time, bookingParams.timezone || 'Asia/Kolkata');
     const now = new Date();
     
-    console.log(`   ⏰ Booking time (parsed): ${bookingDate.toISOString()}`);
-    console.log(`   ⏰ Current time: ${now.toISOString()}`);
+    console.log(`   ⏰ Booking time (UTC): ${bookingDate.toISOString()}`);
+    console.log(`   ⏰ Current time (UTC): ${now.toISOString()}`);
     
-    if (bookingDate < now) {
+    // Add 5 minute buffer for clock skews / latency
+    if (bookingDate.getTime() < now.getTime() - 5 * 60 * 1000) {
       console.log(`   ❌ Date validation FAILED: Booking date is in the past`);
       return NextResponse.json(
         { success: false, error: 'Cannot book appointments in the past' },

@@ -80,7 +80,12 @@ export default function BookingPage() {
     a.getDate() === b.getDate() && a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
 
   const fetchAvailability = useCallback(async (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    // Use local date components to avoid timezone shifts
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+
     setIsLoadingSlots(true);
     setSlotsError(null);
     setAvailableSlots([]);
@@ -167,7 +172,12 @@ export default function BookingPage() {
     setError(null);
 
     try {
-      const dateStr = selectedDate.toISOString().split('T')[0];
+      // Use local date components
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+
       const response = await fetch('/api/calendar/book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

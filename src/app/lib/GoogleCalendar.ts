@@ -13,6 +13,44 @@ import { google } from 'googleapis';
 import type { calendar_v3 } from 'googleapis';
 import path from 'path';
 
+/**
+ * Helper to converting a date/time in a specific timezone to a UTC Date object
+ */
+export function getZonedDate(dateStr: string, timeStr: string, timeZone: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const [h, min] = timeStr.split(':').map(Number);
+  
+  // 1. Create a date that REPRESENTS the target time in UTC
+  const naive = new Date(Date.UTC(y, m - 1, d, h, min, 0));
+  
+  // 2. Format this UTC date into the target timezone string parts
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone,
+    year: 'numeric', month: 'numeric', day: 'numeric',
+    hour: 'numeric', minute: 'numeric', second: 'numeric',
+    hour12: false
+  };
+  const formatter = new Intl.DateTimeFormat('en-US', options);
+  const parts = formatter.formatToParts(naive);
+  // Helper to extract parts
+  const getPart = (type: string) => parts.find(p => p.type === type)?.value;
+  
+  // Parse the formatted string back to numbers
+  const tzYear = parseInt(getPart('year')!);
+  const tzMonth = parseInt(getPart('month')!);
+  const tzDay = parseInt(getPart('day')!);
+  const tzHour = parseInt(getPart('hour')!) % 24;
+  const tzMin = parseInt(getPart('minute')!);
+  
+  // 3. Compare Naive (UTC) vs TzTime
+  const naiveTime = naive.getTime();
+  const tzDateInUtcCoords = Date.UTC(tzYear, tzMonth - 1, tzDay, tzHour, tzMin, 0);
+  
+  const offset = naiveTime - tzDateInUtcCoords;
+  
+  return new Date(naiveTime + offset);
+}
+
 export interface CalendarBookingParams {
   leadName: string;
   email: string;
@@ -80,6 +118,15 @@ export class GoogleCalendarService {
 
     // Initialize Calendar API client with Service Account auth
     this.calendar = google.calendar({ version: 'v3', auth });
+
+    // Validate configuration
+    if (!process.env.GOOGLE_CALENDAR_ID) {
+       console.warn('⚠️ GOOGLE_CALENDAR_ID not set. Defaulting to "primary" which may not be the intended calendar for Service Account.');
+    }
+  }
+
+  private get calendarId(): string {
+     return process.env.GOOGLE_CALENDAR_ID || 'primary';
   }
 
   /**
@@ -99,7 +146,8 @@ export class GoogleCalendarService {
       const { startDateTime, endDateTime } = this.calculateEventTimes(
         params.date,
         params.time,
-        parseInt(params.duration || '60')
+        parseInt(params.duration || '60'),
+        params.timezone || 'Asia/Kolkata'
       );
 
       // Prepare event details
@@ -128,7 +176,7 @@ export class GoogleCalendarService {
 
       // Create the event
       const response = await this.calendar.events.insert({
-        calendarId: process.env.GOOGLE_CALENDAR_ID || 'primary',
+        calendarId: this.calendarId,
         requestBody: event,
         sendUpdates: 'none',
       });
@@ -157,9 +205,14 @@ export class GoogleCalendarService {
   /**
    * Check if a time slot is available (no conflicts)
    */
-  async checkAvailability(date: string, time: string, duration: number = 60): Promise<boolean> {
+  async checkAvailability(
+    date: string, 
+    time: string, 
+    duration: number = 60,
+    timezone: string = 'Asia/Kolkata'
+  ): Promise<boolean> {
     try {
-      const { startDateTime, endDateTime } = this.calculateEventTimes(date, time, duration);
+      const { startDateTime, endDateTime } = this.calculateEventTimes(date, time, duration, timezone);
 
       const response = await this.calendar.freebusy.query({
         requestBody: {
@@ -179,6 +232,35 @@ export class GoogleCalendarService {
     } catch (error) {
       console.error('Error checking availability:', error);
       return false; // Assume not available on error
+    }
+  }
+
+  /**
+   * Get busy periods for a time range
+   */
+  async getBusyPeriods(timeMin: string, timeMax: string): Promise<{ start: string; end: string }[]> {
+    try {
+      const response = await this.calendar.freebusy.query({
+        requestBody: {
+          timeMin,
+          timeMax,
+          items: [{ id: this.calendarId }],
+        },
+      });
+
+      const calendars = response.data.calendars;
+      if (!calendars) return [];
+
+      const calendarId = this.calendarId;
+      const busy = calendars[calendarId]?.busy || [];
+      
+      return busy.map(period => ({
+        start: period.start || '',
+        end: period.end || ''
+      })).filter(p => p.start && p.end);
+    } catch (error) {
+      console.error('Error fetching busy periods:', error);
+      return [];
     }
   }
 
@@ -208,19 +290,16 @@ export class GoogleCalendarService {
   private calculateEventTimes(
     date: string,
     time: string,
-    durationMinutes: number
+    durationMinutes: number,
+    timezone: string = 'Asia/Kolkata'
   ): { startDateTime: string; endDateTime: string } {
-    // Parse date and time
-    const [year, month, day] = date.split('-').map(Number);
-    const [hours, minutes] = time.split(':').map(Number);
+    // Get start date in correct timezone (converted to UTC Date object)
+    const startDate = getZonedDate(date, time, timezone);
 
-    // Create start date
-    const startDate = new Date(year, month - 1, day, hours, minutes);
-
-    // Create end date
+    // Create end date by adding duration
     const endDate = new Date(startDate.getTime() + durationMinutes * 60 * 1000);
 
-    // Format as ISO string
+    // Format as ISO string (UTC)
     const startDateTime = startDate.toISOString();
     const endDateTime = endDate.toISOString();
 
