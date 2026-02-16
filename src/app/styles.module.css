@@ -4,7 +4,7 @@
    Palette: #070707, #111111, #ccff00, white, #a0a0a0
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Manrope:wght@400;500;600&family=Syne:wght@600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500&family=Space+Grotesk:wght@400;500;600&display=swap');
 
 /* === CSS VARIABLES === */
 .page {
@@ -17,8 +17,8 @@
   --text-muted: #a0a0a0;
   --border-subtle: rgba(255, 255, 255, 0.1);
 
-  --font-display: 'Syne', sans-serif;
-  --font-body: 'Manrope', sans-serif;
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
   --transition-smooth: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -161,7 +161,7 @@
   background: var(--accent);
   color: var(--bg-base);
   border: none;
-  font-weight: 700;
+  font-weight: 500;
 }
 .btnPrimary::before { background: #ffffff; }
 
@@ -179,7 +179,7 @@
 .logo {
   font-family: var(--font-display);
   font-size: clamp(1.2rem, 3vw, 1.5rem);
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: -1px;
   text-decoration: none;
   color: var(--text-main);
@@ -213,9 +213,8 @@
 
 
 /* ============================================================
-   VOICE WAVE VISUALIZER (Moved to Component)
+   (WaveVisualizer removed — replaced by Calculator in Hero)
    ============================================================ */
-/* Styles moved to src/app/components/landing/WaveVisualizer/WaveVisualizer.module.css */
 
 
 
@@ -253,7 +252,7 @@
 }
 .problemTitle {
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: -0.02em;
   line-height: 1.1;
@@ -266,136 +265,56 @@
   margin-bottom: 2.5rem;
 }
 
-/* Chaos Timeline */
-.chaosTimeline {
-  position: relative;
-  padding-left: 1rem;
-  margin-bottom: 3rem;
-}
-.chaosTimeline::before {
-  content: '';
-  position: absolute;
-  left: 68px;
-  top: 8px;
-  bottom: 8px;
-  width: 1px;
-  background: var(--border-subtle);
-}
-.chaosItem {
+/* Chaos Timeline — removed, replaced by Impact List */
+
+/* Impact List - Spacious "igloo" cards */
+.impactList {
   display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 0;
-}
-.chaosTime {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  width: 55px;
-  flex-shrink: 0;
-  text-align: right;
-}
-.chaosDot {
-  width: 8px; height: 8px;
-  background: var(--border-subtle);
-  border-radius: 50%;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 1;
-}
-.chaosDotDanger {
-  background: var(--danger);
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
-}
-.chaosContent {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  font-size: clamp(0.85rem, 1.5vw, 0.95rem);
-  color: var(--text-muted);
-}
-.chaosTag {
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--accent);
-  border: 1px solid rgba(204, 255, 0, 0.3);
-  padding: 0.15rem 0.5rem;
-  border-radius: 50px;
-}
-.chaosTagDanger {
-  color: var(--danger);
-  border-color: rgba(239, 68, 68, 0.3);
-}
-.chaosItemResult {
+  flex-direction: column;
+  gap: 1.5rem;
   margin-top: 0.5rem;
 }
-
-/* Chain Reaction */
-.chainReaction {
-  margin-top: 1rem;
-}
-.chainTitle {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 1rem;
-  margin-bottom: 1rem;
-  text-transform: uppercase;
-  letter-spacing: -0.01em;
-}
-.chainItem {
-  border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  margin-bottom: 0.5rem;
-  overflow: hidden;
+.impactItem {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.5rem 1.75rem;
   background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
   transition: var(--transition-smooth);
 }
-@media (hover: hover) {
-  .chainItem:hover { border-color: rgba(204, 255, 0, 0.2); }
+.impactItem:hover {
+  border-color: rgba(239, 68, 68, 0.3);
+  transform: translateX(4px);
 }
-.chainBtn {
-  width: 100%;
-  padding: 0.85rem 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: none; border: none;
-  color: var(--text-main);
-  font-family: var(--font-body);
-  font-size: clamp(0.85rem, 1.5vw, 0.95rem);
-  text-align: left;
-  cursor: pointer;
-  gap: 1rem;
+.impactStat {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  color: var(--danger);
+  line-height: 1;
+  flex-shrink: 0;
+  min-width: 4rem;
 }
-.chainBtnOpen { color: var(--accent); }
-.chainArrow {
-  font-size: 0.65rem;
-  color: var(--accent);
-  transition: transform 0.3s ease;
-}
-.chainBtnOpen .chainArrow { transform: rotate(180deg); }
-.chainAnswer {
-  padding: 0 1rem 1rem;
+.impactText {
   color: var(--text-muted);
-  font-size: clamp(0.85rem, 1.4vw, 0.9rem);
-  line-height: 1.7;
+  font-size: clamp(0.9rem, 1.5vw, 1rem);
+  line-height: 1.6;
+  margin: 0;
 }
 
 /* Calculator Box */
 .calcBox {
   background: var(--bg-surface);
-  padding: clamp(2rem, 5vw, 3rem);
+  padding: clamp(1.75rem, 4vw, 2.5rem);
   border: 1px solid var(--border-subtle);
   border-radius: 24px;
-  height: 100%;
+  width: 100%;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  box-sizing: border-box;
 }
 .calcBoxTitle {
   font-family: var(--font-display);
@@ -403,9 +322,9 @@
   font-size: clamp(1.1rem, 2vw, 1.3rem);
   text-transform: uppercase;
   letter-spacing: -0.01em;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
-.sliderGroup { margin-bottom: clamp(1.5rem, 3vw, 2rem); }
+.sliderGroup { margin-bottom: clamp(1rem, 2vw, 1.25rem); }
 .sliderHeader {
   display: flex;
   justify-content: space-between;
@@ -448,8 +367,8 @@
   border-radius: 3px;
 }
 .resultBox {
-  margin-top: clamp(1.5rem, 4vw, 2.5rem);
-  padding-top: clamp(1.5rem, 3vw, 2rem);
+  margin-top: clamp(1rem, 2.5vw, 1.5rem);
+  padding-top: clamp(1rem, 2vw, 1.25rem);
   border-top: 1px dashed var(--border-subtle);
 }
 .resultLabel {
@@ -463,27 +382,30 @@
 .resultNumber {
   font-family: var(--font-display);
   font-size: clamp(1.8rem, 4.5vw, 3rem);
-  font-weight: 800;
+  font-weight: 600;
   color: var(--accent);
   line-height: 1;
   white-space: nowrap;
+  min-height: 1.2em;
+  display: flex;
+  align-items: center;
 }
 
 /* Calculator Insight Box */
 .calcInsightBox {
-  margin: 1.5rem 0;
-  padding: 1.25rem 1.5rem;
+  margin: 1rem 0;
+  padding: 1rem 1.25rem;
   background: rgba(204, 255, 0, 0.08);
   border: 1px solid rgba(204, 255, 0, 0.2);
   border-radius: 12px;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .calcInsightIcon {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   background: var(--accent);
   color: var(--bg-base);
   border-radius: 50%;
@@ -492,21 +414,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  font-size: 1rem;
   flex-shrink: 0;
 }
 
 .calcInsightText {
   color: var(--text-main);
-  font-size: clamp(0.95rem, 1.5vw, 1.05rem);
+  font-size: clamp(0.9rem, 1.4vw, 1rem);
   margin: 0;
   line-height: 1.4;
 }
 
 /* Hidden Costs Grid */
 .hiddenCosts {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
   border-top: 1px solid var(--border-subtle);
 }
 .hiddenCostsTitle {
@@ -515,18 +437,18 @@
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--text-muted);
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 .hiddenCostsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: clamp(0.5rem, 1.5vw, 0.75rem);
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
 }
 .hiddenCostItem {
   background: rgba(255,255,255,0.03);
   border: 1px solid var(--border-subtle);
   border-radius: 10px;
-  padding: 0.75rem;
+  padding: 0.65rem;
   text-align: center;
 }
 .hiddenCostLabel {
@@ -541,7 +463,7 @@
 .hiddenCostValue {
   display: block;
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 600;
   font-size: 1.2rem;
   color: var(--danger);
 }
@@ -556,7 +478,7 @@
 }
 .sectionTitle {
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: -0.02em;
   line-height: 1.1;
@@ -575,7 +497,6 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: clamp(0.875rem, 2vw, 1.5rem);
-  margin-bottom: clamp(2rem, 5vw, 5rem);
 }
 .statCard {
   background: var(--bg-surface);
@@ -590,7 +511,7 @@
 }
 .statValue {
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 600;
   font-size: clamp(2rem, 5vw, 3.5rem);
   color: var(--accent);
   line-height: 1;
@@ -604,14 +525,36 @@
   letter-spacing: 0.08em;
 }
 
+/* Solution CTA Button */
+.solutionCta {
+  display: flex;
+  justify-content: center;
+  margin-top: clamp(2.5rem, 5vw, 4rem);
+}
+.solutionCta .btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: clamp(0.875rem, 2vw, 1.125rem) clamp(2rem, 4vw, 3rem);
+  font-size: clamp(0.8rem, 1.5vw, 0.95rem);
+}
+
+/* Conversation Log Column */
+.convoColumn {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 /* Conversation Log — Redesigned with Before/After */
 .conversationLog {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: 16px;
   padding: clamp(1.5rem, 4vw, 3rem);
-  max-width: 760px;
-  margin: 0 auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 .convoHeader {
   display: flex;
@@ -638,6 +581,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .messageRow {
@@ -788,7 +733,7 @@
 }
 .bentoTitle {
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: -0.02em;
   line-height: 1.1;
@@ -829,7 +774,7 @@
 }
 .testimonialMetric {
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 600;
   font-size: clamp(2rem, 5vw, 3rem);
   color: var(--accent);
   line-height: 1;
@@ -908,7 +853,7 @@
 }
 .pricingValue {
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 600;
   font-size: clamp(2rem, 5vw, 3.2rem);
   color: var(--accent);
   line-height: 1;
@@ -969,7 +914,7 @@
   align-items: center;
   gap: 0.4rem;
 }
-.pricingCheckmark { color: var(--accent); font-weight: 700; }
+.pricingCheckmark { color: var(--accent); font-weight: 500; }
 
 
 /* ============================================================
@@ -1053,7 +998,7 @@
 }
 .askAiTitle {
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 600;
   font-size: clamp(1.5rem, 3.5vw, 2.2rem);
   text-transform: uppercase;
   letter-spacing: -0.02em;
@@ -1101,7 +1046,7 @@
 }
 .contactTitle {
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: -0.02em;
   line-height: 1.1;
@@ -1282,7 +1227,7 @@
 .formSuccessIcon svg { color: var(--accent); }
 .formSuccess h3 {
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 600;
   font-size: 1.5rem;
   text-transform: uppercase;
   margin-bottom: 0.5rem;
@@ -1315,7 +1260,7 @@
   animation: marquee 15s linear infinite;
   font-family: var(--font-display);
   font-size: clamp(3rem, 12vw, 8rem);
-  font-weight: 800;
+  font-weight: 600;
   text-transform: uppercase;
   will-change: transform;
 }
@@ -1377,279 +1322,551 @@
 
 
 /* ============================================================
-   RESPONSIVE BREAKPOINTS - COMPREHENSIVE
+   RESPONSIVE BREAKPOINTS - COMPREHENSIVE MOBILE-FIRST
    ============================================================ */
 
 /* Large screens */
 @media (max-width: 1200px) {
-  .heroTitle { font-size: clamp(2rem, 6vw, 4rem); }
   .bentoGrid { gap: 1.25rem; }
 }
 
 /* Tablet and below */
 @media (max-width: 1100px) {
-  .problemGrid { 
-    grid-template-columns: 1fr; 
-    gap: 2.5rem;
+  .page {
+    --section-pad: clamp(2rem, 5vh, 4rem);
   }
-  .contactGrid { 
-    grid-template-columns: 1fr; 
-    gap: 2.5rem;
+
+  .container {
+    padding: 0 clamp(0.75rem, 3vw, 1.5rem);
   }
+
+  .problemGrid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .contactGrid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
   .contactTitle { text-align: center; }
-  .contactDesc { 
-    text-align: center; 
+
+  .contactDesc {
+    text-align: center;
     max-width: 500px;
     margin-left: auto;
     margin-right: auto;
   }
-  .coverageList { 
-    text-align: left; 
+
+  .coverageList {
+    text-align: center;
     max-width: 400px;
     margin-left: auto;
     margin-right: auto;
   }
-  .bentoGrid { 
-    grid-template-columns: repeat(2, 1fr); 
-    gap: 1rem;
+
+  /* Hide conversation log on mobile */
+  .convoColumn {
+    display: none;
   }
-  .bentoPrimary { 
-    grid-column: span 2; 
-    grid-row: span 1; 
+
+  .bentoGrid {
+    grid-template-columns: 1fr;
+    gap: 0.875rem;
   }
+
+  .bentoPrimary {
+    grid-column: span 1;
+    grid-row: span 1;
+  }
+
   .testimonialsGrid {
     grid-template-columns: 1fr;
-    max-width: 500px;
-    margin: 0 auto;
-    gap: 1rem;
+    gap: 0.875rem;
   }
-  .statsGrid { 
-    grid-template-columns: repeat(3, 1fr); 
-    gap: 1rem;
+
+  .statsGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
   }
-  .hiddenCostsGrid { 
-    grid-template-columns: repeat(3, 1fr); 
+
+  .statCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 1.25rem 0.75rem;
+  }
+
+  .statValue {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .statLabel {
+    text-align: center;
+    font-size: 0.65rem;
+  }
+
+  /* Horizontal 3-column layout for additional costs */
+  .hiddenCostsGrid {
+    grid-template-columns: repeat(3, 1fr);
     gap: 0.5rem;
+  }
+
+  .hiddenCostItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 0.5rem;
+    text-align: center;
+    gap: 0.5rem;
+  }
+
+  .hiddenCostLabel {
+    margin-bottom: 0;
+    font-size: 0.6rem;
+  }
+
+  .hiddenCostValue {
+    font-size: 1rem;
+  }
+
+  .sectionTitle {
+    font-size: clamp(1.75rem, 6vw, 2.5rem);
+    text-align: center;
+  }
+
+  .sectionSubtitle {
+    text-align: center;
+    font-size: 1rem;
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 
 /* Mobile landscape and below */
 @media (max-width: 768px) {
   .page {
-    --section-pad: clamp(2rem, 5vh, 4rem);
+    --section-pad: clamp(1.75rem, 4vh, 3rem);
   }
-  
-  .contactForm { 
-    max-width: 100%;
-    padding: clamp(1.25rem, 4vw, 2rem);
+
+  .container {
+    padding: 0 1rem;
   }
-  
-  .bentoGrid { 
-    grid-template-columns: 1fr; 
-    gap: 0.875rem;
+
+  .nav {
+    padding: 1rem 0;
   }
-  
-  .bentoPrimary { 
-    grid-column: span 1; 
+
+  .logo {
+    font-size: 1.2rem;
   }
-  
-  .bentoItem {
-    padding: clamp(1.25rem, 4vw, 2rem);
+
+  .secureBadge {
+    font-size: 0.6rem;
+    padding: 0.25rem 0.6rem;
   }
-  
-  .statsGrid { 
-    grid-template-columns: 1fr; 
-    gap: 0.875rem;
+
+  .secureBadge span {
+    display: none;
   }
-  
-  .statCard {
-    padding: clamp(1.25rem, 4vw, 2rem);
+
+  /* Problem Section Mobile */
+  .problemSection {
+    padding: var(--section-pad) 0;
   }
-  
-  .conversationLog {
-    padding: clamp(1rem, 4vw, 2rem);
+
+  .problemTitle {
+    font-size: clamp(1.5rem, 7vw, 2rem);
+    line-height: 1.1;
+    text-align: center;
   }
-  
-  .messageRow {
-    max-width: 92%;
+
+  .problemDesc {
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
   }
-  
-  .messageBubble {
-    padding: 0.7rem 0.9rem;
-    font-size: clamp(0.8rem, 3.5vw, 0.9rem);
+
+  .impactList {
+    gap: 0.75rem;
   }
-  
-  .pricingCard {
-    padding: clamp(2rem, 6vw, 3rem) clamp(1.25rem, 4vw, 2rem);
+
+  .impactItem {
+    padding: 0.85rem 1rem;
   }
-  
-  .askAiCard {
-    padding: clamp(2rem, 6vw, 3rem) clamp(1.25rem, 4vw, 2rem);
+
+  .impactStat {
+    font-size: 1.2rem;
+    min-width: 3rem;
   }
-  
+
+  .impactText {
+    font-size: 0.85rem;
+  }
+
   .calcBox {
-    padding: clamp(1.5rem, 5vw, 2rem);
+    padding: 1.5rem;
   }
-  
-  .chaosTimeline {
-    padding-left: 0.5rem;
+
+  .calcBoxTitle {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
   }
-  
-  .chaosTimeline::before {
-    left: 52px;
+
+  .sliderHeader {
+    font-size: 0.7rem;
   }
-  
-  .chaosTime {
-    width: 45px;
+
+  .resultNumber {
+    font-size: 1.75rem;
+  }
+
+  /* Solution Section Mobile */
+  .solutionSection {
+    padding: var(--section-pad) 0;
+  }
+
+  .conversationLog {
+    padding: 1.25rem;
+    margin: 0 -0.5rem;
+    border-radius: 12px;
+  }
+
+  .messageRow {
+    max-width: 95%;
+  }
+
+  .messageBubble {
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .convoStatus {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
     font-size: 0.65rem;
+  }
+
+  /* Features Section Mobile */
+  .featuresSection {
+    padding: var(--section-pad) 0;
+  }
+
+  .bentoItem {
+    padding: 1.25rem;
+    gap: 0.625rem;
+  }
+
+  .bentoIcon {
+    font-size: 1rem;
+  }
+
+  .bentoTitle {
+    font-size: 1.1rem;
+  }
+
+  .bentoDesc {
+    font-size: 0.85rem;
+  }
+
+  /* Testimonials Section Mobile */
+  .testimonialsSection {
+    padding: var(--section-pad) 0;
+  }
+
+  .testimonialCard {
+    padding: 1.25rem;
+  }
+
+  .testimonialMetric {
+    font-size: 1.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .testimonialQuote {
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+
+  .testimonialName {
+    font-size: 0.9rem;
+  }
+
+  .testimonialRole {
+    font-size: 0.65rem;
+  }
+
+  /* Pricing Section Mobile */
+  .pricingSection {
+    padding: var(--section-pad) 0;
+  }
+
+  .pricingCard {
+    padding: 2rem 1.25rem;
+  }
+
+  .pricingRange {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .pricingDash {
+    display: inline;
+  }
+
+  .pricingValue {
+    font-size: 2rem;
+  }
+
+  .pricingNote {
+    font-size: 0.85rem;
+  }
+
+  .pricingContext {
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .pricingContext span {
+    font-size: 0.8rem;
+  }
+
+  .pricingFeatures {
+    gap: 0.5rem 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .pricingFeatureItem {
+    font-size: 0.65rem;
+  }
+
+  /* FAQ Section Mobile */
+  .faqSection {
+    padding: var(--section-pad) 0;
+  }
+
+  .faqButton {
+    padding: 1rem 1.25rem;
+    font-size: 0.9rem;
+    min-height: 48px;
+  }
+
+  .faqAnswer {
+    padding: 0 1.25rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  /* Ask AI Section Mobile */
+  .askAiSection {
+    padding: var(--section-pad) 0;
+  }
+
+  .askAiCard {
+    padding: 2rem 1.25rem;
+  }
+
+  .askAiTitle {
+    font-size: clamp(1.25rem, 5vw, 1.75rem);
+  }
+
+  .askAiDesc {
+    font-size: 0.9rem;
+  }
+
+  /* Marquee Section Mobile */
+  .ctaSection {
+    padding: 1.5rem 0;
+  }
+
+  .marqueeContent {
+    font-size: clamp(1.75rem, 8vw, 2.5rem);
+    animation-duration: 20s;
+  }
+
+  /* Footer Mobile */
+  .footer {
+    padding: 1.5rem 0;
+  }
+
+  .footerInner {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .footerCopyright {
+    font-size: 0.85rem;
+  }
+
+  .footerLinks {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .footerLink {
+    font-size: 0.65rem;
+  }
+
+  .contactForm {
+    max-width: 100%;
+    padding: 1.25rem;
   }
 }
 
 /* Small mobile */
-@media (max-width: 600px) {
+@media (max-width: 480px) {
   .container {
-    padding: 0 clamp(0.5rem, 3vw, 0.75rem);
+    padding: 0 0.875rem;
   }
-  
-  .footerInner { 
-    flex-direction: column; 
-    text-align: center;
-    gap: 0.875rem;
+
+  .columnLabel {
+    font-size: 0.65rem;
+    margin-bottom: 0.75rem;
   }
-  
-  .footerLinks { 
-    flex-wrap: wrap; 
-    justify-content: center;
-    gap: 1rem;
-  }
-  
-  .messageRow { 
-    max-width: 95%; 
-  }
-  
-  .convoStatus { 
-    flex-direction: column; 
-    gap: 0.5rem;
-    align-items: flex-start;
-  }
-  
-  .hiddenCostsGrid { 
-    grid-template-columns: 1fr; 
-    gap: 0.5rem;
-  }
-  
-  .hiddenCostItem {
-    padding: 0.6rem;
-  }
-  
-  .pricingRange { 
-    flex-direction: row; 
-    gap: 0.5rem;
-    flex-wrap: nowrap;
-    white-space: nowrap;
-  }
-  
-  .pricingValue {
-    font-size: clamp(1.75rem, 8vw, 2.5rem);
-  }
-  
-  .chaosTimeline::before { 
-    left: 48px; 
-  }
-  
-  .chaosItem {
-    gap: 0.75rem;
-    padding: 0.6rem 0;
-  }
-  
-  .chaosContent {
-    font-size: clamp(0.8rem, 3.5vw, 0.9rem);
-  }
-  
-  .chainBtn {
-    padding: 0.75rem 0.875rem;
-    font-size: clamp(0.8rem, 3.5vw, 0.9rem);
-  }
-  
-  .chainAnswer {
-    padding: 0 0.875rem 0.875rem;
-    font-size: clamp(0.8rem, 3.5vw, 0.88rem);
-  }
-  
+
   .sectionTitle {
-    font-size: clamp(1.5rem, 7vw, 2.5rem);
+    font-size: clamp(1.5rem, 7vw, 2rem);
+    margin-bottom: 0.75rem;
   }
-  
+
   .sectionSubtitle {
-    font-size: clamp(0.85rem, 3.5vw, 1rem);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
   }
-  
-  .faqButton {
-    padding: clamp(0.875rem, 3vw, 1rem) clamp(1rem, 3vw, 1.25rem);
-    font-size: clamp(0.85rem, 3.5vw, 0.95rem);
+
+  .problemTitle {
+    font-size: clamp(1.35rem, 6.5vw, 1.75rem);
+    text-align: center;
   }
-  
-  .faqAnswer {
-    padding: 0 clamp(1rem, 3vw, 1.25rem) clamp(0.875rem, 3vw, 1rem);
-    font-size: clamp(0.8rem, 3.5vw, 0.9rem);
+
+  .calcBox {
+    padding: 1.25rem;
   }
-  
-  .testimonialMetric {
-    font-size: clamp(1.75rem, 7vw, 2.5rem);
-  }
-  
-  .trustItem {
-    font-size: clamp(0.6rem, 2vw, 0.65rem);
-  }
-  
-  .trustRow {
-    gap: 0.5rem 1rem;
-  }
-  
+
   .resultNumber {
-    font-size: clamp(1.5rem, 7vw, 2.5rem);
+    font-size: 1.5rem;
   }
-  
-  .waveContainer {
-    height: clamp(180px, 50vw, 280px);
-    min-height: 180px;
-    border-radius: 12px;
+
+  .statCard {
+    padding: 1rem 1.25rem;
   }
-  
-  .nav {
-    padding: clamp(0.75rem, 2.5vw, 1.5rem) 0;
+
+  .statValue {
+    font-size: 1.5rem;
   }
-  
-  .secureBadge {
-    font-size: clamp(0.6rem, 1.8vw, 0.65rem);
-    padding: 0.25rem 0.6rem;
+
+  .messageBubble {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.8rem;
   }
-  
-  .logo {
-    font-size: clamp(1.1rem, 3.5vw, 1.3rem);
+
+  .bentoItem {
+    padding: 1rem;
+  }
+
+  .bentoTitle {
+    font-size: 1rem;
+  }
+
+  .bentoDesc {
+    font-size: 0.8rem;
+  }
+
+  .testimonialCard {
+    padding: 1rem;
+  }
+
+  .testimonialMetric {
+    font-size: 1.5rem;
+  }
+
+  .pricingValue {
+    font-size: 1.75rem;
+  }
+
+  .faqButton {
+    padding: 0.875rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .faqAnswer {
+    font-size: 0.8rem;
+  }
+
+  .askAiCard {
+    padding: 1.5rem 1rem;
+  }
+
+  .askAiTitle {
+    font-size: 1.25rem;
+  }
+
+  .marqueeContent {
+    font-size: clamp(1.5rem, 7vw, 2rem);
   }
 }
 
 /* Extra small devices */
 @media (max-width: 380px) {
-  .heroTitle {
-    font-size: clamp(1.35rem, 9vw, 1.75rem);
+  .container {
+    padding: 0 0.75rem;
   }
-  
+
   .sectionTitle {
-    font-size: clamp(1.35rem, 8vw, 1.75rem);
+    font-size: clamp(1.25rem, 6.5vw, 1.5rem);
   }
-  
+
+  .problemTitle {
+    font-size: 1.25rem;
+    text-align: center;
+  }
+
+  .impactItem {
+    padding: 0.75rem 0.875rem;
+    gap: 0.75rem;
+  }
+
+  .impactStat {
+    font-size: 1.1rem;
+    min-width: 2.5rem;
+  }
+
+  .impactText {
+    font-size: 0.8rem;
+  }
+
+  .resultNumber {
+    font-size: 1.25rem;
+  }
+
+  .statValue {
+    font-size: 1.25rem;
+  }
+
+  .statLabel {
+    font-size: 0.65rem;
+  }
+
+  .messageBubble {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+  }
+
   .pricingValue {
-    font-size: clamp(1.5rem, 9vw, 2rem);
+    font-size: 1.5rem;
   }
-  
+
   .marqueeContent {
-    font-size: clamp(2rem, 10vw, 3rem);
-  }
-  
-  .waveContainer {
-    height: 160px;
-    min-height: 160px;
+    font-size: clamp(1.25rem, 6vw, 1.75rem);
   }
 }

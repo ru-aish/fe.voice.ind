@@ -4,7 +4,7 @@
    Palette: #070707, #111111, #ccff00, white, #a0a0a0
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Manrope:wght@400;500;600&family=Syne:wght@600;800&display=swap');
+@import 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Manrope:wght@400;500;600&family=Syne:wght@600;800&display=swap';
 
 /* === ROOT === */
 .page {
