@@ -4,13 +4,19 @@ import { customElement, property, state } from 'lit/decorators.js';
 export interface AgentSettings {
   languageCode: 'hi-IN' | 'en-IN' | 'gu-IN';
   speaker: string;
-  provider: 'groq' | 'cerebras';
+  provider: 'groq' | 'cerebras' | 'sarvam' | 'gemini';
   groqModel: string;
   cerebrasModel: string;
+  sarvamModel: string;
+  geminiModel: string;
   groqTemperature: number;
   cerebrasTemperature: number;
+  sarvamTemperature: number;
+  geminiTemperature: number;
   groqMaxTokens: number;
   cerebrasMaxTokens: number;
+  sarvamMaxTokens: number;
+  geminiMaxTokens: number;
   promptId: string;
   promptContent: string;
   greeting: string;
@@ -51,6 +57,16 @@ const CEREBRAS_MODELS = [
   'gpt-oss-20b',
 ];
 
+const SARVAM_MODELS = [
+  'sarvam-m:low',
+  'sarvam-m',
+];
+
+const GEMINI_MODELS = [
+  'gemini-2.5-flash-lite-preview-09-2025',
+  'gemini-2.5-flash',
+];
+
 type SettingsTab = 'general' | 'model' | 'prompt';
 
 @customElement('gdm-settings-modal')
@@ -63,10 +79,16 @@ export class GdmSettingsModal extends LitElement {
   @state() declare provider: string;
   @state() declare groqModel: string;
   @state() declare cerebrasModel: string;
+  @state() declare sarvamModel: string;
+  @state() declare geminiModel: string;
   @state() declare groqTemperature: number;
   @state() declare cerebrasTemperature: number;
+  @state() declare sarvamTemperature: number;
+  @state() declare geminiTemperature: number;
   @state() declare groqMaxTokens: number;
   @state() declare cerebrasMaxTokens: number;
+  @state() declare sarvamMaxTokens: number;
+  @state() declare geminiMaxTokens: number;
   @state() declare promptId: string;
   @state() declare promptContent: string;
   @state() declare greeting: string;
@@ -657,10 +679,16 @@ export class GdmSettingsModal extends LitElement {
     this.provider = 'groq';
     this.groqModel = 'openai/gpt-oss-20b';
     this.cerebrasModel = 'gpt-oss-120b';
+    this.sarvamModel = 'sarvam-m:low';
+    this.geminiModel = 'gemini-2.5-flash-lite-preview-09-2025';
     this.groqTemperature = 0.2;
     this.cerebrasTemperature = 0.2;
+    this.sarvamTemperature = 0.2;
+    this.geminiTemperature = 0.2;
     this.groqMaxTokens = 2000;
     this.cerebrasMaxTokens = 2000;
+    this.sarvamMaxTokens = 2000;
+    this.geminiMaxTokens = 2000;
     this.promptId = 'default';
     this.promptContent = 'You are a helpful voice assistant. Respond concisely and naturally.';
     this.greeting = 'Hello! How can I help you today?';
@@ -702,10 +730,16 @@ export class GdmSettingsModal extends LitElement {
       provider: this.provider,
       groqModel: this.groqModel,
       cerebrasModel: this.cerebrasModel,
+      sarvamModel: this.sarvamModel,
+      geminiModel: this.geminiModel,
       groqTemperature: this.groqTemperature,
       cerebrasTemperature: this.cerebrasTemperature,
+      sarvamTemperature: this.sarvamTemperature,
+      geminiTemperature: this.geminiTemperature,
       groqMaxTokens: this.groqMaxTokens,
       cerebrasMaxTokens: this.cerebrasMaxTokens,
+      sarvamMaxTokens: this.sarvamMaxTokens,
+      geminiMaxTokens: this.geminiMaxTokens,
       promptId: this.promptId,
       promptContent: this.promptContent,
       greeting: this.greeting,
@@ -729,16 +763,26 @@ export class GdmSettingsModal extends LitElement {
   }
 
   private getActiveModel(): string {
-    return this.provider === 'cerebras' ? this.cerebrasModel : this.groqModel;
+    if (this.provider === 'cerebras') return this.cerebrasModel;
+    if (this.provider === 'sarvam') return this.sarvamModel;
+    if (this.provider === 'gemini') return this.geminiModel;
+    return this.groqModel;
   }
 
   private getActiveModels(): string[] {
-    return this.provider === 'cerebras' ? CEREBRAS_MODELS : GROQ_MODELS;
+    if (this.provider === 'cerebras') return CEREBRAS_MODELS;
+    if (this.provider === 'sarvam') return SARVAM_MODELS;
+    if (this.provider === 'gemini') return GEMINI_MODELS;
+    return GROQ_MODELS;
   }
 
   private setActiveModel(model: string) {
     if (this.provider === 'cerebras') {
       this.cerebrasModel = model;
+    } else if (this.provider === 'sarvam') {
+      this.sarvamModel = model;
+    } else if (this.provider === 'gemini') {
+      this.geminiModel = model;
     } else {
       this.groqModel = model;
     }
@@ -746,12 +790,19 @@ export class GdmSettingsModal extends LitElement {
   }
 
   private getActiveTemperature(): number {
-    return this.provider === 'cerebras' ? this.cerebrasTemperature : this.groqTemperature;
+    if (this.provider === 'cerebras') return this.cerebrasTemperature;
+    if (this.provider === 'sarvam') return this.sarvamTemperature;
+    if (this.provider === 'gemini') return this.geminiTemperature;
+    return this.groqTemperature;
   }
 
   private setActiveTemperature(value: number) {
     if (this.provider === 'cerebras') {
       this.cerebrasTemperature = value;
+    } else if (this.provider === 'sarvam') {
+      this.sarvamTemperature = value;
+    } else if (this.provider === 'gemini') {
+      this.geminiTemperature = value;
     } else {
       this.groqTemperature = value;
     }
@@ -759,12 +810,19 @@ export class GdmSettingsModal extends LitElement {
   }
 
   private getActiveMaxTokens(): number {
-    return this.provider === 'cerebras' ? this.cerebrasMaxTokens : this.groqMaxTokens;
+    if (this.provider === 'cerebras') return this.cerebrasMaxTokens;
+    if (this.provider === 'sarvam') return this.sarvamMaxTokens;
+    if (this.provider === 'gemini') return this.geminiMaxTokens;
+    return this.groqMaxTokens;
   }
 
   private setActiveMaxTokens(value: number) {
     if (this.provider === 'cerebras') {
       this.cerebrasMaxTokens = value;
+    } else if (this.provider === 'sarvam') {
+      this.sarvamMaxTokens = value;
+    } else if (this.provider === 'gemini') {
+      this.geminiMaxTokens = value;
     } else {
       this.groqMaxTokens = value;
     }
@@ -788,10 +846,16 @@ export class GdmSettingsModal extends LitElement {
       provider: this.provider as AgentSettings['provider'],
       groqModel: this.groqModel.trim() || 'openai/gpt-oss-20b',
       cerebrasModel: this.cerebrasModel.trim() || 'gpt-oss-120b',
+      sarvamModel: this.sarvamModel.trim() || 'sarvam-m:low',
+      geminiModel: this.geminiModel.trim() || 'gemini-2.5-flash-lite-preview-09-2025',
       groqTemperature: this.toBoundedNumber(this.groqTemperature, 0.2, 0, 2),
       cerebrasTemperature: this.toBoundedNumber(this.cerebrasTemperature, 0.2, 0, 2),
+      sarvamTemperature: this.toBoundedNumber(this.sarvamTemperature, 0.2, 0, 2),
+      geminiTemperature: this.toBoundedNumber(this.geminiTemperature, 0.2, 0, 2),
       groqMaxTokens: this.toBoundedInt(this.groqMaxTokens, 2000, 32, 8192),
       cerebrasMaxTokens: this.toBoundedInt(this.cerebrasMaxTokens, 2000, 32, 8192),
+      sarvamMaxTokens: this.toBoundedInt(this.sarvamMaxTokens, 2000, 32, 8192),
+      geminiMaxTokens: this.toBoundedInt(this.geminiMaxTokens, 2000, 32, 8192),
       promptId: this.promptId,
       promptContent: this.promptContent.trim(),
       greeting: this.greeting.trim(),
@@ -819,10 +883,16 @@ export class GdmSettingsModal extends LitElement {
     this.provider = 'groq';
     this.groqModel = 'openai/gpt-oss-20b';
     this.cerebrasModel = 'gpt-oss-120b';
+    this.sarvamModel = 'sarvam-m:low';
+    this.geminiModel = 'gemini-2.5-flash-lite-preview-09-2025';
     this.groqTemperature = 0.2;
     this.cerebrasTemperature = 0.2;
+    this.sarvamTemperature = 0.2;
+    this.geminiTemperature = 0.2;
     this.groqMaxTokens = 2000;
     this.cerebrasMaxTokens = 2000;
+    this.sarvamMaxTokens = 2000;
+    this.geminiMaxTokens = 2000;
     this.promptId = 'default';
     this.greeting = 'Hello! How can I help you today?';
     this.showDebugLogs = false;
@@ -842,10 +912,16 @@ export class GdmSettingsModal extends LitElement {
       this.provider = settings.provider ?? 'groq';
       this.groqModel = settings.groqModel ?? 'openai/gpt-oss-20b';
       this.cerebrasModel = settings.cerebrasModel ?? 'gpt-oss-120b';
+      this.sarvamModel = settings.sarvamModel ?? 'sarvam-m:low';
+      this.geminiModel = settings.geminiModel ?? 'gemini-2.5-flash-lite-preview-09-2025';
       this.groqTemperature = settings.groqTemperature ?? 0.2;
       this.cerebrasTemperature = settings.cerebrasTemperature ?? 0.2;
+      this.sarvamTemperature = settings.sarvamTemperature ?? 0.2;
+      this.geminiTemperature = settings.geminiTemperature ?? 0.2;
       this.groqMaxTokens = settings.groqMaxTokens ?? 2000;
       this.cerebrasMaxTokens = settings.cerebrasMaxTokens ?? 2000;
+      this.sarvamMaxTokens = settings.sarvamMaxTokens ?? 2000;
+      this.geminiMaxTokens = settings.geminiMaxTokens ?? 2000;
       this.promptId = settings.promptId ?? 'default';
       this.promptContent = settings.promptContent ?? this.promptContent;
       this.greeting = settings.greeting ?? 'Hello! How can I help you today?';
@@ -998,13 +1074,29 @@ export class GdmSettingsModal extends LitElement {
             ?data-active=${this.provider === 'cerebras'}
             @click=${() => { this.provider = 'cerebras'; this.checkUnsaved(); }}
           >Cerebras</button>
+          <button
+            class="provider-option"
+            ?data-active=${this.provider === 'sarvam'}
+            @click=${() => { this.provider = 'sarvam'; this.checkUnsaved(); }}
+          >Sarvam</button>
+          <button
+            class="provider-option"
+            ?data-active=${this.provider === 'gemini'}
+            @click=${() => { this.provider = 'gemini'; this.checkUnsaved(); }}
+          >Gemini</button>
         </div>
       </div>
 
       <!-- Active model config (shows only active provider) -->
       <div class="section">
         <div class="section-label">
-          ${this.provider === 'groq' ? 'Groq' : 'Cerebras'} Configuration
+          ${this.provider === 'groq'
+            ? 'Groq'
+            : this.provider === 'cerebras'
+              ? 'Cerebras'
+              : this.provider === 'sarvam'
+                ? 'Sarvam'
+                : 'Gemini'} Configuration
         </div>
 
         <div class="field">
@@ -1068,6 +1160,12 @@ export class GdmSettingsModal extends LitElement {
       </datalist>
       <datalist id="cerebras-models">
         ${CEREBRAS_MODELS.map((m) => html`<option value=${m}></option>`)}
+      </datalist>
+      <datalist id="sarvam-models">
+        ${SARVAM_MODELS.map((m) => html`<option value=${m}></option>`)}
+      </datalist>
+      <datalist id="gemini-models">
+        ${GEMINI_MODELS.map((m) => html`<option value=${m}></option>`)}
       </datalist>
     `;
   }
