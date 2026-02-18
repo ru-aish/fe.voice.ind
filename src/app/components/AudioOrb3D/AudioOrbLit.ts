@@ -107,6 +107,7 @@ export class GdmLiveAudio extends LitElement {
   private droppedRequestIds = new Set<number>();
   private resolvedServerUrl: string | null = null;
   private greetingAudio: HTMLAudioElement | null = null;
+  private unavailableGreetingAudioUrls = new Set<string>();
 
   @state() declare currentSettings: AgentSettings;
 
@@ -531,17 +532,29 @@ export class GdmLiveAudio extends LitElement {
     return GREETING_AUDIO_BY_LANGUAGE[normalized] || GREETING_AUDIO_BY_LANGUAGE['gu-IN'];
   }
 
-  private preloadGreetingAudio() {
-    const urls = Object.values(GREETING_AUDIO_BY_LANGUAGE);
-    for (const url of urls) {
-      const audio = new Audio(url);
-      audio.preload = 'auto';
-      audio.load();
+  private async canPlayGreetingAudio(url: string): Promise<boolean> {
+    if (this.unavailableGreetingAudioUrls.has(url)) return false;
+    try {
+      const response = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+      if (!response.ok) {
+        this.unavailableGreetingAudioUrls.add(url);
+        return false;
+      }
+      return true;
+    } catch {
+      this.unavailableGreetingAudioUrls.add(url);
+      return false;
     }
   }
 
   private async playPreRecordedGreeting(languageCode: string): Promise<void> {
     const url = this.resolveGreetingAudioUrl(languageCode);
+    const isAvailable = await this.canPlayGreetingAudio(url);
+    if (!isAvailable) {
+      this.warnLog(`[VoiceAI] Greeting audio not found: ${url}`);
+      return;
+    }
+
     const audio = new Audio(url);
     audio.preload = 'auto';
     this.greetingAudio = audio;
@@ -562,6 +575,7 @@ export class GdmLiveAudio extends LitElement {
 
       audio.onended = finish;
       audio.onerror = () => {
+        this.unavailableGreetingAudioUrls.add(url);
         this.warnLog(`[VoiceAI] Greeting audio missing/unplayable: ${url}`);
         finish();
       };
@@ -1335,7 +1349,6 @@ export class GdmLiveAudio extends LitElement {
 
   protected async firstUpdated() {
     this.initAudio();
-    this.preloadGreetingAudio();
 
     this.addEventListener('settings-save', ((e: Event) => {
       const event = e as CustomEvent<AgentSettings>;
