@@ -10,9 +10,9 @@ const DEPLOYED_VOICE_SERVER_URL = process.env.NEXT_PUBLIC_VOICE_SERVER_URL || 'w
 const CONTEXT_MAX_TURNS = 1200;
 const CONTEXT_MAX_CHARS = 120000;
 const GREETING_AUDIO_BY_LANGUAGE: Record<string, string> = {
-  'gu-IN': '/audio/greetings/gu-IN.mp3',
-  'hi-IN': '/audio/greetings/hi-IN.mp3',
-  'en-IN': '/audio/greetings/en-IN.mp3',
+  'gu-IN': '/audio/greetings/gu-IN.wav',
+  'hi-IN': '/audio/greetings/hi-IN.wav',
+  'en-IN': '/audio/greetings/en-IN.wav',
 };
 
 interface ReadyMessage {
@@ -107,7 +107,6 @@ export class GdmLiveAudio extends LitElement {
   private droppedRequestIds = new Set<number>();
   private resolvedServerUrl: string | null = null;
   private greetingAudio: HTMLAudioElement | null = null;
-  private unavailableGreetingAudioUrls = new Set<string>();
 
   @state() declare currentSettings: AgentSettings;
 
@@ -532,29 +531,8 @@ export class GdmLiveAudio extends LitElement {
     return GREETING_AUDIO_BY_LANGUAGE[normalized] || GREETING_AUDIO_BY_LANGUAGE['gu-IN'];
   }
 
-  private async canPlayGreetingAudio(url: string): Promise<boolean> {
-    if (this.unavailableGreetingAudioUrls.has(url)) return false;
-    try {
-      const response = await fetch(url, { method: 'HEAD', cache: 'no-store' });
-      if (!response.ok) {
-        this.unavailableGreetingAudioUrls.add(url);
-        return false;
-      }
-      return true;
-    } catch {
-      this.unavailableGreetingAudioUrls.add(url);
-      return false;
-    }
-  }
-
   private async playPreRecordedGreeting(languageCode: string): Promise<void> {
     const url = this.resolveGreetingAudioUrl(languageCode);
-    const isAvailable = await this.canPlayGreetingAudio(url);
-    if (!isAvailable) {
-      this.warnLog(`[VoiceAI] Greeting audio not found: ${url}`);
-      return;
-    }
-
     const audio = new Audio(url);
     audio.preload = 'auto';
     this.greetingAudio = audio;
@@ -575,7 +553,6 @@ export class GdmLiveAudio extends LitElement {
 
       audio.onended = finish;
       audio.onerror = () => {
-        this.unavailableGreetingAudioUrls.add(url);
         this.warnLog(`[VoiceAI] Greeting audio missing/unplayable: ${url}`);
         finish();
       };
