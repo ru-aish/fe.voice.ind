@@ -678,7 +678,7 @@ export class GdmSettingsModal extends LitElement {
     this.activeTab = 'general';
     this.languageCode = 'gu-IN';
     this.speaker = 'shubh';
-    this.provider = 'groq';
+    this.provider = 'gemini';
     this.groqModel = 'openai/gpt-oss-120b';
     this.cerebrasModel = 'gpt-oss-120b';
     this.sarvamModel = 'sarvam-m:low';
@@ -881,7 +881,7 @@ export class GdmSettingsModal extends LitElement {
   private handleReset() {
     this.languageCode = 'gu-IN';
     this.speaker = 'shubh';
-    this.provider = 'groq';
+    this.provider = 'gemini';
     this.groqModel = 'openai/gpt-oss-120b';
     this.cerebrasModel = 'gpt-oss-120b';
     this.sarvamModel = 'sarvam-m:low';
@@ -907,7 +907,7 @@ export class GdmSettingsModal extends LitElement {
     if (settings) {
       this.languageCode = settings.languageCode ?? 'gu-IN';
       this.speaker = settings.speaker ?? 'shubh';
-      this.provider = settings.provider ?? 'groq';
+      this.provider = settings.provider ?? 'gemini';
       this.groqModel = settings.groqModel ?? 'openai/gpt-oss-120b';
       this.cerebrasModel = settings.cerebrasModel ?? 'gpt-oss-120b';
       this.sarvamModel = settings.sarvamModel ?? 'sarvam-m:low';

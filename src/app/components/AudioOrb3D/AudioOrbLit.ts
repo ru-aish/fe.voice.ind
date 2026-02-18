@@ -10,9 +10,9 @@ const DEPLOYED_VOICE_SERVER_URL = process.env.NEXT_PUBLIC_VOICE_SERVER_URL || 'w
 const CONTEXT_MAX_TURNS = 1200;
 const CONTEXT_MAX_CHARS = 120000;
 const GREETING_AUDIO_BY_LANGUAGE: Record<string, string> = {
-  'gu-IN': '/audio/greetings/gu-IN.wav',
-  'hi-IN': '/audio/greetings/hi-IN.wav',
-  'en-IN': '/audio/greetings/en-IN.wav',
+  'gu-IN': '/audio/greetings/gu-IN.mp3',
+  'hi-IN': '/audio/greetings/hi-IN.mp3',
+  'en-IN': '/audio/greetings/en-IN.mp3',
 };
 
 interface ReadyMessage {
@@ -106,7 +106,7 @@ export class GdmLiveAudio extends LitElement {
   private activeRequestId: number | null = null;
   private droppedRequestIds = new Set<number>();
   private resolvedServerUrl: string | null = null;
-  private greetingAudio: HTMLAudioElement | null = null;
+  private greetingSource: AudioBufferSourceNode | null = null;
 
   @state() declare currentSettings: AgentSettings;
 
@@ -443,7 +443,7 @@ export class GdmLiveAudio extends LitElement {
       this.currentSettings = {
         languageCode: 'gu-IN',
         speaker: 'shubh',
-        provider: 'groq',
+        provider: 'gemini',
       groqModel: 'openai/gpt-oss-120b',
         cerebrasModel: 'gpt-oss-120b',
         sarvamModel: 'sarvam-m:low',
@@ -533,35 +533,34 @@ export class GdmLiveAudio extends LitElement {
 
   private async playPreRecordedGreeting(languageCode: string): Promise<void> {
     const url = this.resolveGreetingAudioUrl(languageCode);
-    const audio = new Audio(url);
-    audio.preload = 'auto';
-    this.greetingAudio = audio;
-
-    await new Promise<void>((resolve) => {
-      let done = false;
-
-      const finish = () => {
-        if (done) return;
-        done = true;
-        audio.onended = null;
-        audio.onerror = null;
-        if (this.greetingAudio === audio) {
-          this.greetingAudio = null;
-        }
-        resolve();
-      };
-
-      audio.onended = finish;
-      audio.onerror = () => {
+    try {
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) {
         this.warnLog(`[VoiceAI] Greeting audio missing/unplayable: ${url}`);
-        finish();
-      };
+        return;
+      }
 
-      audio.play().catch((err) => {
-        this.warnLog('[VoiceAI] Greeting audio playback blocked:', err);
-        finish();
+      const bytes = await response.arrayBuffer();
+      const decoded = await this.outputAudioContext.decodeAudioData(bytes.slice(0));
+      const source = this.outputAudioContext.createBufferSource();
+      source.buffer = decoded;
+      source.connect(this.outputNode);
+      this.greetingSource = source;
+      this.sources.add(source);
+
+      await new Promise<void>((resolve) => {
+        source.addEventListener('ended', () => {
+          this.sources.delete(source);
+          if (this.greetingSource === source) {
+            this.greetingSource = null;
+          }
+          resolve();
+        }, { once: true });
+        source.start();
       });
-    });
+    } catch (err) {
+      this.warnLog('[VoiceAI] Greeting audio playback failed:', err);
+    }
   }
 
   private calculateChunkDurations(chunks: string[]): number[] {
@@ -1048,6 +1047,7 @@ export class GdmLiveAudio extends LitElement {
       } catch {}
     });
     this.sources.clear();
+    this.greetingSource = null;
   }
 
   private async processAudioQueue() {
@@ -1190,9 +1190,6 @@ export class GdmLiveAudio extends LitElement {
       await this.connectWebSocket();
     }
 
-    this.updateStatus('Playing greeting...');
-    await this.playPreRecordedGreeting(this.currentSettings.languageCode);
-
     await this.inputAudioContext.resume();
     await this.outputAudioContext.resume();
 
@@ -1243,6 +1240,8 @@ export class GdmLiveAudio extends LitElement {
 
       this.isRecording = true;
       this.updateStatus('Recording... Speak now!');
+      this.infoLog('[VoiceAI] Playing local greeting audio');
+      void this.playPreRecordedGreeting(this.currentSettings.languageCode);
     } catch (err) {
       this.errorLog('[VoiceAI] Error starting recording:', err);
       this.updateError(`Microphone error: ${(err as Error).message}`);
@@ -1273,11 +1272,6 @@ export class GdmLiveAudio extends LitElement {
     }
     
     this.stopCurrentAudio();
-    if (this.greetingAudio) {
-      this.greetingAudio.pause();
-      this.greetingAudio.currentTime = 0;
-      this.greetingAudio = null;
-    }
     this.audioQueue = [];
     this.nextStartTime = 0;
     this.isUserSpeaking = false;
@@ -1398,11 +1392,6 @@ export class GdmLiveAudio extends LitElement {
     }
 
     this.stopCurrentAudio();
-    if (this.greetingAudio) {
-      this.greetingAudio.pause();
-      this.greetingAudio.currentTime = 0;
-      this.greetingAudio = null;
-    }
     this.audioQueue = [];
     this.resetCC();
     this.isConnecting = false;
