@@ -47,6 +47,7 @@ export const LANGUAGES = [
 ];
 
 const GROQ_MODELS = [
+  'openai/gpt-oss-120b',
   'openai/gpt-oss-20b',
   'llama-3.3-70b-versatile',
   'qwen/qwen3-32b',
@@ -63,11 +64,12 @@ const SARVAM_MODELS = [
 ];
 
 const GEMINI_MODELS = [
+  'gemini-flash-lite-latest',
   'gemini-2.5-flash-lite-preview-09-2025',
   'gemini-2.5-flash',
 ];
 
-type SettingsTab = 'general' | 'model' | 'prompt';
+type SettingsTab = 'general' | 'model';
 
 @customElement('gdm-settings-modal')
 export class GdmSettingsModal extends LitElement {
@@ -677,29 +679,28 @@ export class GdmSettingsModal extends LitElement {
     this.languageCode = 'gu-IN';
     this.speaker = 'shubh';
     this.provider = 'groq';
-    this.groqModel = 'openai/gpt-oss-20b';
+    this.groqModel = 'openai/gpt-oss-120b';
     this.cerebrasModel = 'gpt-oss-120b';
     this.sarvamModel = 'sarvam-m:low';
-    this.geminiModel = 'gemini-2.5-flash-lite-preview-09-2025';
-    this.groqTemperature = 0.2;
+    this.geminiModel = 'gemini-flash-lite-latest';
+    this.groqTemperature = 1;
     this.cerebrasTemperature = 0.2;
     this.sarvamTemperature = 0.2;
-    this.geminiTemperature = 0.2;
+    this.geminiTemperature = 1;
     this.groqMaxTokens = 2000;
     this.cerebrasMaxTokens = 2000;
     this.sarvamMaxTokens = 2000;
-    this.geminiMaxTokens = 2000;
-    this.promptId = 'default';
-    this.promptContent = 'You are a helpful voice assistant. Respond concisely and naturally.';
+    this.geminiMaxTokens = 8000;
+    this.promptId = '';
+    this.promptContent = '';
     this.greeting = 'Hello! How can I help you today?';
     this.showDebugLogs = false;
     this.useDeployedServer = false;
     this.customServerUrl = 'wss://voice-ind.onrender.com/';
     this.prompts = [];
-    this.loadingPrompts = true;
+    this.loadingPrompts = false;
     this.hasUnsavedChanges = false;
     this.savedSnapshot = '';
-    this.loadPrompts();
   }
 
   private async loadPrompts() {
@@ -844,18 +845,18 @@ export class GdmSettingsModal extends LitElement {
       languageCode: this.languageCode as AgentSettings['languageCode'],
       speaker: this.speaker,
       provider: this.provider as AgentSettings['provider'],
-      groqModel: this.groqModel.trim() || 'openai/gpt-oss-20b',
+      groqModel: this.groqModel.trim() || 'openai/gpt-oss-120b',
       cerebrasModel: this.cerebrasModel.trim() || 'gpt-oss-120b',
       sarvamModel: this.sarvamModel.trim() || 'sarvam-m:low',
-      geminiModel: this.geminiModel.trim() || 'gemini-2.5-flash-lite-preview-09-2025',
-      groqTemperature: this.toBoundedNumber(this.groqTemperature, 0.2, 0, 2),
+      geminiModel: this.geminiModel.trim() || 'gemini-flash-lite-latest',
+      groqTemperature: this.toBoundedNumber(this.groqTemperature, 1, 0, 2),
       cerebrasTemperature: this.toBoundedNumber(this.cerebrasTemperature, 0.2, 0, 2),
       sarvamTemperature: this.toBoundedNumber(this.sarvamTemperature, 0.2, 0, 2),
-      geminiTemperature: this.toBoundedNumber(this.geminiTemperature, 0.2, 0, 2),
+      geminiTemperature: this.toBoundedNumber(this.geminiTemperature, 1, 0, 2),
       groqMaxTokens: this.toBoundedInt(this.groqMaxTokens, 2000, 32, 8192),
       cerebrasMaxTokens: this.toBoundedInt(this.cerebrasMaxTokens, 2000, 32, 8192),
       sarvamMaxTokens: this.toBoundedInt(this.sarvamMaxTokens, 2000, 32, 8192),
-      geminiMaxTokens: this.toBoundedInt(this.geminiMaxTokens, 2000, 32, 8192),
+      geminiMaxTokens: this.toBoundedInt(this.geminiMaxTokens, 8000, 32, 8192),
       promptId: this.promptId,
       promptContent: this.promptContent.trim(),
       greeting: this.greeting.trim(),
@@ -881,27 +882,24 @@ export class GdmSettingsModal extends LitElement {
     this.languageCode = 'gu-IN';
     this.speaker = 'shubh';
     this.provider = 'groq';
-    this.groqModel = 'openai/gpt-oss-20b';
+    this.groqModel = 'openai/gpt-oss-120b';
     this.cerebrasModel = 'gpt-oss-120b';
     this.sarvamModel = 'sarvam-m:low';
-    this.geminiModel = 'gemini-2.5-flash-lite-preview-09-2025';
-    this.groqTemperature = 0.2;
+    this.geminiModel = 'gemini-flash-lite-latest';
+    this.groqTemperature = 1;
     this.cerebrasTemperature = 0.2;
     this.sarvamTemperature = 0.2;
-    this.geminiTemperature = 0.2;
+    this.geminiTemperature = 1;
     this.groqMaxTokens = 2000;
     this.cerebrasMaxTokens = 2000;
     this.sarvamMaxTokens = 2000;
-    this.geminiMaxTokens = 2000;
-    this.promptId = 'default';
+    this.geminiMaxTokens = 8000;
+    this.promptId = '';
+    this.promptContent = '';
     this.greeting = 'Hello! How can I help you today?';
     this.showDebugLogs = false;
     this.useDeployedServer = false;
     this.customServerUrl = 'wss://voice-ind.onrender.com/';
-    const defaultPrompt = this.prompts.find((p: PromptOption) => p.id === 'default');
-    if (defaultPrompt) {
-      this.promptContent = defaultPrompt.content;
-    }
     this.checkUnsaved();
   }
 
@@ -910,20 +908,20 @@ export class GdmSettingsModal extends LitElement {
       this.languageCode = settings.languageCode ?? 'gu-IN';
       this.speaker = settings.speaker ?? 'shubh';
       this.provider = settings.provider ?? 'groq';
-      this.groqModel = settings.groqModel ?? 'openai/gpt-oss-20b';
+      this.groqModel = settings.groqModel ?? 'openai/gpt-oss-120b';
       this.cerebrasModel = settings.cerebrasModel ?? 'gpt-oss-120b';
       this.sarvamModel = settings.sarvamModel ?? 'sarvam-m:low';
-      this.geminiModel = settings.geminiModel ?? 'gemini-2.5-flash-lite-preview-09-2025';
-      this.groqTemperature = settings.groqTemperature ?? 0.2;
+      this.geminiModel = settings.geminiModel ?? 'gemini-flash-lite-latest';
+      this.groqTemperature = settings.groqTemperature ?? 1;
       this.cerebrasTemperature = settings.cerebrasTemperature ?? 0.2;
       this.sarvamTemperature = settings.sarvamTemperature ?? 0.2;
-      this.geminiTemperature = settings.geminiTemperature ?? 0.2;
+      this.geminiTemperature = settings.geminiTemperature ?? 1;
       this.groqMaxTokens = settings.groqMaxTokens ?? 2000;
       this.cerebrasMaxTokens = settings.cerebrasMaxTokens ?? 2000;
       this.sarvamMaxTokens = settings.sarvamMaxTokens ?? 2000;
-      this.geminiMaxTokens = settings.geminiMaxTokens ?? 2000;
-      this.promptId = settings.promptId ?? 'default';
-      this.promptContent = settings.promptContent ?? this.promptContent;
+      this.geminiMaxTokens = settings.geminiMaxTokens ?? 8000;
+      this.promptId = settings.promptId ?? '';
+      this.promptContent = settings.promptContent ?? '';
       this.greeting = settings.greeting ?? 'Hello! How can I help you today?';
       this.showDebugLogs = settings.showDebugLogs ?? false;
       this.useDeployedServer = settings.useDeployedServer ?? false;
@@ -1240,18 +1238,12 @@ export class GdmSettingsModal extends LitElement {
               ?data-active=${this.activeTab === 'model'}
               @click=${() => { this.activeTab = 'model'; }}
             >Model</button>
-            <button
-              class="tab"
-              ?data-active=${this.activeTab === 'prompt'}
-              @click=${() => { this.activeTab = 'prompt'; }}
-            >Prompt</button>
           </div>
 
           <!-- Body -->
           <div class="body">
             ${this.activeTab === 'general' ? this.renderGeneralTab() : nothing}
             ${this.activeTab === 'model' ? this.renderModelTab() : nothing}
-            ${this.activeTab === 'prompt' ? this.renderPromptTab() : nothing}
           </div>
 
           <!-- Footer -->

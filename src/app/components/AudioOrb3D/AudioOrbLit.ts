@@ -434,29 +434,29 @@ export class GdmLiveAudio extends LitElement {
     this.inputNode = this.inputAudioContext.createGain();
     this.outputNode = this.outputAudioContext.createGain();
     
-    this.currentSettings = {
-      languageCode: 'gu-IN',
-      speaker: 'shubh',
-      provider: 'groq',
-      groqModel: 'openai/gpt-oss-20b',
-      cerebrasModel: 'gpt-oss-120b',
-      sarvamModel: 'sarvam-m:low',
-      geminiModel: 'gemini-2.5-flash-lite-preview-09-2025',
-      groqTemperature: 0.2,
-      cerebrasTemperature: 0.2,
-      sarvamTemperature: 0.2,
-      geminiTemperature: 0.2,
-      groqMaxTokens: 2000,
-      cerebrasMaxTokens: 2000,
-      sarvamMaxTokens: 2000,
-      geminiMaxTokens: 2000,
-      promptId: 'default',
-      promptContent: 'You are a helpful voice assistant. Respond concisely and naturally.',
-      greeting: 'Hello! How can I help you today?',
-      showDebugLogs: false,
-      useDeployedServer: false,
-      customServerUrl: 'wss://voice-ind.onrender.com/',
-    };
+      this.currentSettings = {
+        languageCode: 'gu-IN',
+        speaker: 'shubh',
+        provider: 'groq',
+      groqModel: 'openai/gpt-oss-120b',
+        cerebrasModel: 'gpt-oss-120b',
+        sarvamModel: 'sarvam-m:low',
+      geminiModel: 'gemini-flash-lite-latest',
+      groqTemperature: 1,
+        cerebrasTemperature: 0.2,
+        sarvamTemperature: 0.2,
+      geminiTemperature: 1,
+        groqMaxTokens: 2000,
+        cerebrasMaxTokens: 2000,
+        sarvamMaxTokens: 2000,
+      geminiMaxTokens: 8000,
+      promptId: '',
+      promptContent: '',
+        greeting: 'Hello! How can I help you today?',
+        showDebugLogs: false,
+        useDeployedServer: false,
+        customServerUrl: 'wss://voice-ind.onrender.com/',
+      };
   }
 
   private shouldLogDebug(): boolean {
@@ -1146,6 +1146,13 @@ export class GdmLiveAudio extends LitElement {
       await this.connectWebSocket();
     }
 
+    this.voiceSocket?.send({
+      type: 'greet',
+      data: {
+        language: this.currentSettings.languageCode,
+      },
+    });
+
     await this.inputAudioContext.resume();
     await this.outputAudioContext.resume();
 
@@ -1274,23 +1281,6 @@ export class GdmLiveAudio extends LitElement {
 
   protected async firstUpdated() {
     this.initAudio();
-
-    try {
-      const response = await fetch('/api/prompts');
-      if (!response.ok) {
-        this.errorLog(`[VoiceAI] Failed to load prompts: HTTP ${response.status} ${response.statusText}`);
-      } else {
-        const data = await response.json();
-        if (data.prompts && data.prompts.length > 0) {
-          const defaultPrompt = data.prompts.find((p: { id: string }) => p.id === 'default');
-          if (defaultPrompt) {
-            this.currentSettings.promptContent = defaultPrompt.content;
-          }
-        }
-      }
-    } catch (error) {
-      this.errorLog('[VoiceAI] Failed to load prompts:', error);
-    }
 
     this.addEventListener('settings-save', ((e: Event) => {
       const event = e as CustomEvent<AgentSettings>;
