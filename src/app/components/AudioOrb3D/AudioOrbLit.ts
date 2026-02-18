@@ -9,6 +9,11 @@ const LOCAL_VOICE_SERVER_URL = 'ws://localhost:8081/';
 const DEPLOYED_VOICE_SERVER_URL = process.env.NEXT_PUBLIC_VOICE_SERVER_URL || 'wss://voice-ind.onrender.com/';
 const CONTEXT_MAX_TURNS = 1200;
 const CONTEXT_MAX_CHARS = 120000;
+const GREETING_AUDIO_BY_LANGUAGE: Record<string, string> = {
+  'gu-IN': '/audio/greetings/gu-IN.mp3',
+  'hi-IN': '/audio/greetings/hi-IN.mp3',
+  'en-IN': '/audio/greetings/en-IN.mp3',
+};
 
 interface ReadyMessage {
   sessionId: string;
@@ -101,6 +106,7 @@ export class GdmLiveAudio extends LitElement {
   private activeRequestId: number | null = null;
   private droppedRequestIds = new Set<number>();
   private resolvedServerUrl: string | null = null;
+  private greetingAudio: HTMLAudioElement | null = null;
 
   @state() declare currentSettings: AgentSettings;
 
@@ -518,6 +524,53 @@ export class GdmLiveAudio extends LitElement {
     }
 
     return chunks.filter(c => c.trim().length > 0);
+  }
+
+  private resolveGreetingAudioUrl(languageCode: string): string {
+    const normalized = String(languageCode || '').trim();
+    return GREETING_AUDIO_BY_LANGUAGE[normalized] || GREETING_AUDIO_BY_LANGUAGE['gu-IN'];
+  }
+
+  private preloadGreetingAudio() {
+    const urls = Object.values(GREETING_AUDIO_BY_LANGUAGE);
+    for (const url of urls) {
+      const audio = new Audio(url);
+      audio.preload = 'auto';
+      audio.load();
+    }
+  }
+
+  private async playPreRecordedGreeting(languageCode: string): Promise<void> {
+    const url = this.resolveGreetingAudioUrl(languageCode);
+    const audio = new Audio(url);
+    audio.preload = 'auto';
+    this.greetingAudio = audio;
+
+    await new Promise<void>((resolve) => {
+      let done = false;
+
+      const finish = () => {
+        if (done) return;
+        done = true;
+        audio.onended = null;
+        audio.onerror = null;
+        if (this.greetingAudio === audio) {
+          this.greetingAudio = null;
+        }
+        resolve();
+      };
+
+      audio.onended = finish;
+      audio.onerror = () => {
+        this.warnLog(`[VoiceAI] Greeting audio missing/unplayable: ${url}`);
+        finish();
+      };
+
+      audio.play().catch((err) => {
+        this.warnLog('[VoiceAI] Greeting audio playback blocked:', err);
+        finish();
+      });
+    });
   }
 
   private calculateChunkDurations(chunks: string[]): number[] {
@@ -1146,12 +1199,8 @@ export class GdmLiveAudio extends LitElement {
       await this.connectWebSocket();
     }
 
-    this.voiceSocket?.send({
-      type: 'greet',
-      data: {
-        language: this.currentSettings.languageCode,
-      },
-    });
+    this.updateStatus('Playing greeting...');
+    await this.playPreRecordedGreeting(this.currentSettings.languageCode);
 
     await this.inputAudioContext.resume();
     await this.outputAudioContext.resume();
@@ -1233,6 +1282,11 @@ export class GdmLiveAudio extends LitElement {
     }
     
     this.stopCurrentAudio();
+    if (this.greetingAudio) {
+      this.greetingAudio.pause();
+      this.greetingAudio.currentTime = 0;
+      this.greetingAudio = null;
+    }
     this.audioQueue = [];
     this.nextStartTime = 0;
     this.isUserSpeaking = false;
@@ -1281,6 +1335,7 @@ export class GdmLiveAudio extends LitElement {
 
   protected async firstUpdated() {
     this.initAudio();
+    this.preloadGreetingAudio();
 
     this.addEventListener('settings-save', ((e: Event) => {
       const event = e as CustomEvent<AgentSettings>;
@@ -1353,6 +1408,11 @@ export class GdmLiveAudio extends LitElement {
     }
 
     this.stopCurrentAudio();
+    if (this.greetingAudio) {
+      this.greetingAudio.pause();
+      this.greetingAudio.currentTime = 0;
+      this.greetingAudio = null;
+    }
     this.audioQueue = [];
     this.resetCC();
     this.isConnecting = false;
