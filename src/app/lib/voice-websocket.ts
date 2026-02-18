@@ -33,7 +33,7 @@ export class VoiceWebSocket {
         this.ws = new WebSocket(this.config.url);
 
         this.ws.onopen = () => {
-          console.log('WebSocket connected');
+          console.log(`WebSocket connected (${this.config.url})`);
           this.reconnectAttempts = 0;
           settled = true;
           this.config.onOpen?.();
@@ -41,7 +41,7 @@ export class VoiceWebSocket {
         };
 
         this.ws.onclose = (event) => {
-          console.log('WebSocket closed');
+          console.log(`WebSocket closed (code=${event.code}, reason=${event.reason || 'n/a'})`);
           this.config.onClose?.(event);
           if (!settled) {
             reject(new Error('WebSocket closed before connection'));

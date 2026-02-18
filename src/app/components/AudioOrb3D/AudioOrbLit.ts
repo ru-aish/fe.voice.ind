@@ -7,6 +7,13 @@ import { VoiceWebSocket } from '../../lib/voice-websocket';
 
 const LOCAL_VOICE_SERVER_URL = 'ws://localhost:8081/';
 const DEPLOYED_VOICE_SERVER_URL = process.env.NEXT_PUBLIC_VOICE_SERVER_URL || 'wss://voice-ind.onrender.com/';
+const CONTEXT_MAX_TURNS = 1200;
+const CONTEXT_MAX_CHARS = 120000;
+const GREETING_AUDIO_BY_LANGUAGE: Record<string, string> = {
+  'gu-IN': '/audio/greetings/gu-IN.mp3',
+  'hi-IN': '/audio/greetings/hi-IN.mp3',
+  'en-IN': '/audio/greetings/en-IN.mp3',
+};
 
 interface ReadyMessage {
   sessionId: string;
@@ -99,6 +106,7 @@ export class GdmLiveAudio extends LitElement {
   private activeRequestId: number | null = null;
   private droppedRequestIds = new Set<number>();
   private resolvedServerUrl: string | null = null;
+  private greetingSource: AudioBufferSourceNode | null = null;
 
   @state() declare currentSettings: AgentSettings;
 
@@ -432,23 +440,29 @@ export class GdmLiveAudio extends LitElement {
     this.inputNode = this.inputAudioContext.createGain();
     this.outputNode = this.outputAudioContext.createGain();
     
-    this.currentSettings = {
-      languageCode: 'gu-IN',
-      speaker: 'shubh',
-      provider: 'groq',
-      groqModel: 'openai/gpt-oss-20b',
-      cerebrasModel: 'gpt-oss-120b',
-      groqTemperature: 0.2,
-      cerebrasTemperature: 0.2,
-      groqMaxTokens: 2000,
-      cerebrasMaxTokens: 2000,
-      promptId: 'default',
-      promptContent: 'You are a helpful voice assistant. Respond concisely and naturally.',
-      greeting: 'Hello! How can I help you today?',
-      showDebugLogs: false,
-      useDeployedServer: false,
-      customServerUrl: 'wss://voice-ind.onrender.com/',
-    };
+      this.currentSettings = {
+        languageCode: 'gu-IN',
+        speaker: 'shubh',
+        provider: 'gemini',
+      groqModel: 'openai/gpt-oss-120b',
+        cerebrasModel: 'gpt-oss-120b',
+        sarvamModel: 'sarvam-m:low',
+      geminiModel: 'gemini-flash-lite-latest',
+      groqTemperature: 1,
+        cerebrasTemperature: 0.2,
+        sarvamTemperature: 0.2,
+      geminiTemperature: 1,
+        groqMaxTokens: 2000,
+        cerebrasMaxTokens: 2000,
+        sarvamMaxTokens: 2000,
+      geminiMaxTokens: 8000,
+      promptId: '',
+      promptContent: '',
+        greeting: 'Hello! How can I help you today?',
+        showDebugLogs: false,
+        useDeployedServer: false,
+        customServerUrl: 'wss://voice-ind.onrender.com/',
+      };
   }
 
   private shouldLogDebug(): boolean {
@@ -510,6 +524,43 @@ export class GdmLiveAudio extends LitElement {
     }
 
     return chunks.filter(c => c.trim().length > 0);
+  }
+
+  private resolveGreetingAudioUrl(languageCode: string): string {
+    const normalized = String(languageCode || '').trim();
+    return GREETING_AUDIO_BY_LANGUAGE[normalized] || GREETING_AUDIO_BY_LANGUAGE['gu-IN'];
+  }
+
+  private async playPreRecordedGreeting(languageCode: string): Promise<void> {
+    const url = this.resolveGreetingAudioUrl(languageCode);
+    try {
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) {
+        this.warnLog(`[VoiceAI] Greeting audio missing/unplayable: ${url}`);
+        return;
+      }
+
+      const bytes = await response.arrayBuffer();
+      const decoded = await this.outputAudioContext.decodeAudioData(bytes.slice(0));
+      const source = this.outputAudioContext.createBufferSource();
+      source.buffer = decoded;
+      source.connect(this.outputNode);
+      this.greetingSource = source;
+      this.sources.add(source);
+
+      await new Promise<void>((resolve) => {
+        source.addEventListener('ended', () => {
+          this.sources.delete(source);
+          if (this.greetingSource === source) {
+            this.greetingSource = null;
+          }
+          resolve();
+        }, { once: true });
+        source.start();
+      });
+    } catch (err) {
+      this.warnLog('[VoiceAI] Greeting audio playback failed:', err);
+    }
   }
 
   private calculateChunkDurations(chunks: string[]): number[] {
@@ -740,16 +791,25 @@ export class GdmLiveAudio extends LitElement {
 
     this.sendConfig({
       language: this.currentSettings.languageCode,
+      sttSampleRate: this.inputAudioContext.sampleRate,
+      sttInputAudioCodec: 'pcm_s16le',
       ttsLanguage: this.resolveTtsLanguage(this.currentSettings.languageCode),
       speaker: this.currentSettings.speaker,
       provider: this.currentSettings.provider,
       groqModel: this.currentSettings.groqModel,
       cerebrasModel: this.currentSettings.cerebrasModel,
+      sarvamModel: this.currentSettings.sarvamModel,
+      geminiModel: this.currentSettings.geminiModel,
       groqTemperature: this.currentSettings.groqTemperature,
       cerebrasTemperature: this.currentSettings.cerebrasTemperature,
+      sarvamTemperature: this.currentSettings.sarvamTemperature,
+      geminiTemperature: this.currentSettings.geminiTemperature,
       groqMaxTokens: this.currentSettings.groqMaxTokens,
       cerebrasMaxTokens: this.currentSettings.cerebrasMaxTokens,
-      systemPrompt: this.currentSettings.promptContent,
+      sarvamMaxTokens: this.currentSettings.sarvamMaxTokens,
+      geminiMaxTokens: this.currentSettings.geminiMaxTokens,
+      contextMaxTurns: CONTEXT_MAX_TURNS,
+      contextMaxChars: CONTEXT_MAX_CHARS,
       greeting: this.currentSettings.greeting,
     });
   }
@@ -938,27 +998,14 @@ export class GdmLiveAudio extends LitElement {
 
   private sendAudio(audioData: ArrayBuffer) {
     if (this.voiceSocket?.isConnected()) {
-      const base64 = this.arrayBufferToBase64(audioData);
       this.outboundAudioPackets += 1;
       this.debugLog('ws_message_out', {
         type: 'audio',
         bytes: audioData.byteLength,
         packet: this.outboundAudioPackets,
       });
-      this.voiceSocket.send({
-        type: 'audio',
-        data: { audio: base64 },
-      });
+      this.voiceSocket.sendAudio(audioData);
     }
-  }
-
-  private arrayBufferToBase64(buffer: ArrayBuffer): string {
-    const bytes = new Uint8Array(buffer);
-    let binary = '';
-    for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary);
   }
 
   private decodeBase64Audio(rawAudio: string): Uint8Array | null {
@@ -1000,6 +1047,7 @@ export class GdmLiveAudio extends LitElement {
       } catch {}
     });
     this.sources.clear();
+    this.greetingSource = null;
   }
 
   private async processAudioQueue() {
@@ -1087,49 +1135,6 @@ export class GdmLiveAudio extends LitElement {
     );
   }
 
-  private canReachWebSocket(url: string, timeoutMs: number = 1200): Promise<boolean> {
-    return new Promise((resolve) => {
-      let settled = false;
-      let opened = false;
-      let socket: WebSocket | null = null;
-
-      const finish = (value: boolean) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timeout);
-        resolve(value);
-      };
-
-      const timeout = setTimeout(() => {
-        if (socket) socket.close();
-        finish(false);
-      }, timeoutMs);
-
-      try {
-        socket = new WebSocket(url);
-      } catch {
-        finish(false);
-        return;
-      }
-
-      socket.onopen = () => {
-        opened = true;
-        socket?.close(1000, 'probe complete');
-        finish(true);
-      };
-
-      socket.onerror = () => {
-        finish(false);
-      };
-
-      socket.onclose = () => {
-        if (!opened) {
-          finish(false);
-        }
-      };
-    });
-  }
-
   private async resolveServerUrl(): Promise<string> {
     if (this.currentSettings.useDeployedServer && this.currentSettings.customServerUrl) {
       return this.currentSettings.customServerUrl;
@@ -1139,8 +1144,9 @@ export class GdmLiveAudio extends LitElement {
       return this.resolvedServerUrl;
     }
 
-    const localAvailable = await this.canReachWebSocket(LOCAL_VOICE_SERVER_URL);
-    this.resolvedServerUrl = localAvailable ? LOCAL_VOICE_SERVER_URL : DEPLOYED_VOICE_SERVER_URL;
+    this.resolvedServerUrl = this.isLocalHostname()
+      ? LOCAL_VOICE_SERVER_URL
+      : DEPLOYED_VOICE_SERVER_URL;
     return this.resolvedServerUrl;
   }
 
@@ -1234,6 +1240,8 @@ export class GdmLiveAudio extends LitElement {
 
       this.isRecording = true;
       this.updateStatus('Recording... Speak now!');
+      this.infoLog('[VoiceAI] Playing local greeting audio');
+      void this.playPreRecordedGreeting(this.currentSettings.languageCode);
     } catch (err) {
       this.errorLog('[VoiceAI] Error starting recording:', err);
       this.updateError(`Microphone error: ${(err as Error).message}`);
@@ -1283,22 +1291,9 @@ export class GdmLiveAudio extends LitElement {
     
     this.stopCurrentAudio();
     this.audioQueue = [];
-    
-    if (this.voiceSocket) {
-      this.voiceSocket.disconnect();
-      this.voiceSocket = null;
-    }
-    
-    if (this.inputAudioContext.state === 'running') {
-      this.inputAudioContext.suspend();
-    }
-    
-    if (this.outputAudioContext.state === 'running') {
-      this.outputAudioContext.suspend();
-    }
-    
+
     this.resetCC();
-    this.updateStatus('Paused');
+    this.updateStatus('Paused. Session remains active.');
   }
 
   public async resume() {
@@ -1326,23 +1321,6 @@ export class GdmLiveAudio extends LitElement {
   protected async firstUpdated() {
     this.initAudio();
 
-    try {
-      const response = await fetch('/api/prompts');
-      if (!response.ok) {
-        this.errorLog(`[VoiceAI] Failed to load prompts: HTTP ${response.status} ${response.statusText}`);
-      } else {
-        const data = await response.json();
-        if (data.prompts && data.prompts.length > 0) {
-          const defaultPrompt = data.prompts.find((p: { id: string }) => p.id === 'default');
-          if (defaultPrompt) {
-            this.currentSettings.promptContent = defaultPrompt.content;
-          }
-        }
-      }
-    } catch (error) {
-      this.errorLog('[VoiceAI] Failed to load prompts:', error);
-    }
-
     this.addEventListener('settings-save', ((e: Event) => {
       const event = e as CustomEvent<AgentSettings>;
       const wasDebugEnabled = Boolean(this.currentSettings.showDebugLogs);
@@ -1355,16 +1333,25 @@ export class GdmLiveAudio extends LitElement {
       if (this.voiceSocket?.isConnected()) {
         this.sendConfig({
           language: this.currentSettings.languageCode,
+          sttSampleRate: this.inputAudioContext.sampleRate,
+          sttInputAudioCodec: 'pcm_s16le',
           ttsLanguage: this.resolveTtsLanguage(this.currentSettings.languageCode),
           speaker: this.currentSettings.speaker,
           provider: this.currentSettings.provider,
           groqModel: this.currentSettings.groqModel,
           cerebrasModel: this.currentSettings.cerebrasModel,
+          sarvamModel: this.currentSettings.sarvamModel,
+          geminiModel: this.currentSettings.geminiModel,
           groqTemperature: this.currentSettings.groqTemperature,
           cerebrasTemperature: this.currentSettings.cerebrasTemperature,
+          sarvamTemperature: this.currentSettings.sarvamTemperature,
+          geminiTemperature: this.currentSettings.geminiTemperature,
           groqMaxTokens: this.currentSettings.groqMaxTokens,
           cerebrasMaxTokens: this.currentSettings.cerebrasMaxTokens,
-          systemPrompt: this.currentSettings.promptContent,
+          sarvamMaxTokens: this.currentSettings.sarvamMaxTokens,
+          geminiMaxTokens: this.currentSettings.geminiMaxTokens,
+          contextMaxTurns: CONTEXT_MAX_TURNS,
+          contextMaxChars: CONTEXT_MAX_CHARS,
           greeting: this.currentSettings.greeting,
         });
       }
