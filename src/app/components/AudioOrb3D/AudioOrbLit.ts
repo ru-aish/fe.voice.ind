@@ -87,6 +87,7 @@ export class GdmLiveAudio extends LitElement {
   private ccSequenceComplete: boolean = false;
   private outboundAudioPackets = 0;
   private inboundAudioPackets = 0;
+  private hideCCTimer: ReturnType<typeof setTimeout> | null = null;
 
   private voiceSocket: VoiceWebSocket | null = null;
   private sessionId: string | null = null;
@@ -582,6 +583,19 @@ export class GdmLiveAudio extends LitElement {
     this.ccTimeouts = [];
   }
 
+  private showAssistantStaticCC(text: string) {
+    this.clearCCTimeouts();
+    if (this.hideCCTimer) {
+      clearTimeout(this.hideCCTimer);
+      this.hideCCTimer = null;
+    }
+    this.ccChunks = [text];
+    this.ccCurrentIndex = 0;
+    this.ccVisible = true;
+    this.ccExiting = false;
+    this.ccSequenceComplete = true; 
+  }
+
   private resetCC() {
     this.clearCCTimeouts();
     this.ccChunks = [];
@@ -911,6 +925,7 @@ export class GdmLiveAudio extends LitElement {
     
     if (data.vadSignal === 'START_SPEECH') {
       this.isUserSpeaking = true;
+      if (this.hideCCTimer) { clearTimeout(this.hideCCTimer); this.hideCCTimer = null; }
       // Mark active request as dropped on VAD start
       if (this.activeRequestId) {
         this.droppedRequestIds.add(this.activeRequestId);
@@ -954,7 +969,11 @@ export class GdmLiveAudio extends LitElement {
       if (this.activeRequestId) {
         this.droppedRequestIds.delete(this.activeRequestId);
       }
-      this.hideCCAfterDelay(1000);
+      
+      const isAudioPending = this.audioQueue.length > 0 || this.sources.size > 0;
+      if (!isAudioPending) {
+        this.hideCCAfterDelay(1000);
+      }
       return;
     }
 
@@ -1115,13 +1134,23 @@ export class GdmLiveAudio extends LitElement {
         
         setTimeout(() => {
           if (this.isUserSpeaking) return;
-          this.startCCSequence(textToDisplay);
+          this.showAssistantStaticCC(textToDisplay);
         }, delayMs);
       }
 
       source.start(this.nextStartTime);
       this.nextStartTime = this.nextStartTime + buffer.duration;
       this.sources.add(source);
+
+      const chunkEndGlobalTimeMs = Math.max(0, (this.nextStartTime - this.outputAudioContext.currentTime) * 1000);
+      if (this.hideCCTimer) {
+        clearTimeout(this.hideCCTimer);
+      }
+      this.hideCCTimer = setTimeout(() => {
+        if (!this.isUserSpeaking && this.ccVisible) {
+          this.hideCCAfterDelay(400);
+        }
+      }, chunkEndGlobalTimeMs);
     }
   }
 
@@ -1306,6 +1335,7 @@ export class GdmLiveAudio extends LitElement {
     this.stopCurrentAudio();
     this.audioQueue = [];
     this.assistantTextMap.clear();
+    if (this.hideCCTimer) { clearTimeout(this.hideCCTimer); this.hideCCTimer = null; }
     this.nextStartTime = 0;
     this.isUserSpeaking = false;
     this.sessionId = null;
@@ -1428,6 +1458,7 @@ export class GdmLiveAudio extends LitElement {
     this.stopCurrentAudio();
     this.audioQueue = [];
     this.assistantTextMap.clear();
+    if (this.hideCCTimer) { clearTimeout(this.hideCCTimer); this.hideCCTimer = null; }
     this.resetCC();
     this.isConnecting = false;
     this.sessionId = null;
