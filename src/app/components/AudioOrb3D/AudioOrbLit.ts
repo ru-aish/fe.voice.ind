@@ -56,13 +56,20 @@ interface ErrorMessage {
   error: string;
 }
 
+interface AssistantTextMessage {
+  requestId: number;
+  segmentIndex: number;
+  text: string;
+}
+
 type IncomingMessage = 
   | { type: 'ready'; data: ReadyMessage }
   | { type: 'transcript'; data: TranscriptMessage }
   | { type: 'audio'; data: AudioMessage }
   | { type: 'vad'; data: VadMessage }
   | { type: 'metrics'; data: MetricsMessage }
-  | { type: 'error'; data: ErrorMessage };
+  | { type: 'error'; data: ErrorMessage }
+  | { type: 'assistant_text'; data: AssistantTextMessage };
 
 @customElement('gdm-live-audio')
 export class GdmLiveAudio extends LitElement {
@@ -100,7 +107,8 @@ export class GdmLiveAudio extends LitElement {
   private workletLoaded = false;
   private microphonePacketCount = 0;
   private sources = new Set<AudioBufferSourceNode>();
-  private audioQueue: Uint8Array[] = [];
+  private audioQueue: { pcmData: Uint8Array; segmentIndex: number }[] = [];
+  private assistantTextMap = new Map<number, string>();
   private isUserSpeaking = false;
   private isConnecting = false;
   private activeRequestId: number | null = null;
@@ -772,6 +780,9 @@ export class GdmLiveAudio extends LitElement {
       case 'error':
         this.updateError(message.data.error);
         break;
+      case 'assistant_text':
+        this.handleAssistantText(message.data);
+        break;
       default:
         this.warnLog('[VoiceAI] Unknown message type:', (message as { type: string }).type);
     }
@@ -880,7 +891,7 @@ export class GdmLiveAudio extends LitElement {
         }
       }
 
-      this.audioQueue.push(pcmData);
+      this.audioQueue.push({ pcmData, segmentIndex: data.segmentIndex });
       this.inboundAudioPackets += 1;
       this.debugLog('audio_chunk_in', {
         requestId: data.requestId,
@@ -907,6 +918,7 @@ export class GdmLiveAudio extends LitElement {
       this.activeRequestId = null;
       this.stopCurrentAudio();
       this.audioQueue = [];
+      this.assistantTextMap.clear();
       this.nextStartTime = this.outputAudioContext.currentTime;
       this.resetCC();
     } else if (data.vadSignal === 'END_SPEECH') {
@@ -1050,6 +1062,11 @@ export class GdmLiveAudio extends LitElement {
     this.greetingSource = null;
   }
 
+  private handleAssistantText(data: AssistantTextMessage) {
+    if (this.isUserSpeaking) return;
+    this.assistantTextMap.set(data.segmentIndex, data.text);
+  }
+
   private async processAudioQueue() {
     if (this.audioQueue.length === 0) return;
 
@@ -1059,14 +1076,15 @@ export class GdmLiveAudio extends LitElement {
     }
 
     while (this.audioQueue.length > 0) {
-      const audioChunk = this.audioQueue.shift();
-      if (!audioChunk) continue;
+      const audioDataObj = this.audioQueue.shift();
+      if (!audioDataObj) continue;
+      const { pcmData: audioDataOuter, segmentIndex } = audioDataObj;
 
-      const evenByteLength = audioChunk.byteLength - (audioChunk.byteLength % 2);
+      const evenByteLength = audioDataOuter.byteLength - (audioDataOuter.byteLength % 2);
       if (evenByteLength <= 0) continue;
       const audioData = new Int16Array(
-        audioChunk.buffer,
-        audioChunk.byteOffset,
+        audioDataOuter.buffer,
+        audioDataOuter.byteOffset,
         evenByteLength / 2
       );
 
@@ -1086,6 +1104,20 @@ export class GdmLiveAudio extends LitElement {
       source.addEventListener('ended', () => {
         this.sources.delete(source);
       });
+
+      // Show the assistant text at the EXACT time it plays
+      const delayMs = Math.max(0, (this.nextStartTime - this.outputAudioContext.currentTime) * 1000);
+      
+      const textToDisplay = this.assistantTextMap.get(segmentIndex);
+      if (textToDisplay) {
+        // Prevent re-displaying the same text multiple times per chunk
+        this.assistantTextMap.delete(segmentIndex);
+        
+        setTimeout(() => {
+          if (this.isUserSpeaking) return;
+          this.startCCSequence(textToDisplay);
+        }, delayMs);
+      }
 
       source.start(this.nextStartTime);
       this.nextStartTime = this.nextStartTime + buffer.duration;
@@ -1273,6 +1305,7 @@ export class GdmLiveAudio extends LitElement {
     
     this.stopCurrentAudio();
     this.audioQueue = [];
+    this.assistantTextMap.clear();
     this.nextStartTime = 0;
     this.isUserSpeaking = false;
     this.sessionId = null;
@@ -1291,6 +1324,7 @@ export class GdmLiveAudio extends LitElement {
     
     this.stopCurrentAudio();
     this.audioQueue = [];
+    this.assistantTextMap.clear();
 
     this.resetCC();
     this.updateStatus('Paused. Session remains active.');
@@ -1393,6 +1427,7 @@ export class GdmLiveAudio extends LitElement {
 
     this.stopCurrentAudio();
     this.audioQueue = [];
+    this.assistantTextMap.clear();
     this.resetCC();
     this.isConnecting = false;
     this.sessionId = null;
