@@ -87,7 +87,10 @@ export class GdmLiveAudio extends LitElement {
   private ccSequenceComplete: boolean = false;
   private outboundAudioPackets = 0;
   private inboundAudioPackets = 0;
-  private hideCCTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private scheduledSubtitles: { text: string; segmentIndex: number; startTime: number; endTime: number; shown: boolean }[] = [];
+  private currentDisplayedSegment: number | null = null;
+  private syncFrameId: number | null = null;
 
   private voiceSocket: VoiceWebSocket | null = null;
   private sessionId: string | null = null;
@@ -585,10 +588,7 @@ export class GdmLiveAudio extends LitElement {
 
   private showAssistantStaticCC(text: string) {
     this.clearCCTimeouts();
-    if (this.hideCCTimer) {
-      clearTimeout(this.hideCCTimer);
-      this.hideCCTimer = null;
-    }
+
     this.ccChunks = [text];
     this.ccCurrentIndex = 0;
     this.ccVisible = true;
@@ -651,19 +651,51 @@ export class GdmLiveAudio extends LitElement {
 
   private hideCCAfterDelay(delay: number = 1000) {
     const timeout = setTimeout(() => {
-      if (!this.ccSequenceComplete && this.ccVisible) {
-        this.hideCCAfterDelay(500);
-        return;
-      }
       if (!this.ccVisible) return;
       this.ccExiting = true;
       const hideTimeout = setTimeout(() => {
         this.ccVisible = false;
         this.ccExiting = false;
+        this.currentDisplayedSegment = null;
       }, 150);
       this.ccTimeouts.push(hideTimeout);
     }, delay);
     this.ccTimeouts.push(timeout);
+  }
+
+  private runCCTicker() {
+    const tick = () => {
+      this.syncFrameId = requestAnimationFrame(tick);
+      if (this.isUserSpeaking) {
+        this.scheduledSubtitles = [];
+        this.currentDisplayedSegment = null;
+        return;
+      }
+
+      if (!this.outputAudioContext) return;
+      const now = this.outputAudioContext.currentTime;
+
+      // Clean up past subtitles
+      this.scheduledSubtitles = this.scheduledSubtitles.filter(sub => now < sub.endTime + 0.3);
+
+      const activeSub = this.scheduledSubtitles.find(sub => now >= sub.startTime && now <= sub.endTime);
+
+      if (activeSub) {
+        if (this.currentDisplayedSegment !== activeSub.segmentIndex) {
+          this.showAssistantStaticCC(activeSub.text);
+          this.currentDisplayedSegment = activeSub.segmentIndex;
+        }
+      } else {
+        const hasUpcoming = this.scheduledSubtitles.some(sub => sub.startTime > now && sub.startTime - now < 0.2);
+        if (!hasUpcoming && this.ccVisible && !this.ccExiting && this.currentDisplayedSegment !== null) {
+          this.currentDisplayedSegment = null;
+          this.hideCCAfterDelay(200);
+        }
+      }
+    };
+    if (!this.syncFrameId) {
+      this.syncFrameId = requestAnimationFrame(tick);
+    }
   }
 
   private async connectWebSocket(): Promise<void> {
@@ -925,7 +957,7 @@ export class GdmLiveAudio extends LitElement {
     
     if (data.vadSignal === 'START_SPEECH') {
       this.isUserSpeaking = true;
-      if (this.hideCCTimer) { clearTimeout(this.hideCCTimer); this.hideCCTimer = null; }
+      this.scheduledSubtitles = [];
       // Mark active request as dropped on VAD start
       if (this.activeRequestId) {
         this.droppedRequestIds.add(this.activeRequestId);
@@ -1124,33 +1156,27 @@ export class GdmLiveAudio extends LitElement {
         this.sources.delete(source);
       });
 
-      // Show the assistant text at the EXACT time it plays
-      const delayMs = Math.max(0, (this.nextStartTime - this.outputAudioContext.currentTime) * 1000);
-      
+      // Update subtitle scheduling array accurately
       const textToDisplay = this.assistantTextMap.get(segmentIndex);
       if (textToDisplay) {
-        // Prevent re-displaying the same text multiple times per chunk
+        this.scheduledSubtitles.push({
+          text: textToDisplay,
+          segmentIndex,
+          startTime: this.nextStartTime,
+          endTime: this.nextStartTime + buffer.duration,
+          shown: false
+        });
         this.assistantTextMap.delete(segmentIndex);
-        
-        setTimeout(() => {
-          if (this.isUserSpeaking) return;
-          this.showAssistantStaticCC(textToDisplay);
-        }, delayMs);
+      } else {
+        const existingSub = this.scheduledSubtitles.find(s => s.segmentIndex === segmentIndex);
+        if (existingSub) {
+          existingSub.endTime = this.nextStartTime + buffer.duration;
+        }
       }
 
       source.start(this.nextStartTime);
       this.nextStartTime = this.nextStartTime + buffer.duration;
       this.sources.add(source);
-
-      const chunkEndGlobalTimeMs = Math.max(0, (this.nextStartTime - this.outputAudioContext.currentTime) * 1000);
-      if (this.hideCCTimer) {
-        clearTimeout(this.hideCCTimer);
-      }
-      this.hideCCTimer = setTimeout(() => {
-        if (!this.isUserSpeaking && this.ccVisible) {
-          this.hideCCAfterDelay(400);
-        }
-      }, chunkEndGlobalTimeMs);
     }
   }
 
@@ -1335,7 +1361,7 @@ export class GdmLiveAudio extends LitElement {
     this.stopCurrentAudio();
     this.audioQueue = [];
     this.assistantTextMap.clear();
-    if (this.hideCCTimer) { clearTimeout(this.hideCCTimer); this.hideCCTimer = null; }
+    this.scheduledSubtitles = [];
     this.nextStartTime = 0;
     this.isUserSpeaking = false;
     this.sessionId = null;
@@ -1384,6 +1410,7 @@ export class GdmLiveAudio extends LitElement {
 
   protected async firstUpdated() {
     this.initAudio();
+    this.runCCTicker();
 
     this.addEventListener('settings-save', ((e: Event) => {
       const event = e as CustomEvent<AgentSettings>;
@@ -1444,6 +1471,11 @@ export class GdmLiveAudio extends LitElement {
   }
 
   disconnectedCallback() {
+    if (this.syncFrameId) {
+      cancelAnimationFrame(this.syncFrameId);
+      this.syncFrameId = null;
+    }
+
     if (this.voiceSocket) {
       this.voiceSocket.disconnect();
       this.voiceSocket = null;
@@ -1458,7 +1490,7 @@ export class GdmLiveAudio extends LitElement {
     this.stopCurrentAudio();
     this.audioQueue = [];
     this.assistantTextMap.clear();
-    if (this.hideCCTimer) { clearTimeout(this.hideCCTimer); this.hideCCTimer = null; }
+    this.scheduledSubtitles = [];
     this.resetCC();
     this.isConnecting = false;
     this.sessionId = null;
