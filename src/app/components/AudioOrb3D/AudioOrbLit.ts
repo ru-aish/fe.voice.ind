@@ -56,13 +56,20 @@ interface ErrorMessage {
   error: string;
 }
 
+interface AssistantTextMessage {
+  requestId: number;
+  segmentIndex: number;
+  text: string;
+}
+
 type IncomingMessage = 
   | { type: 'ready'; data: ReadyMessage }
   | { type: 'transcript'; data: TranscriptMessage }
   | { type: 'audio'; data: AudioMessage }
   | { type: 'vad'; data: VadMessage }
   | { type: 'metrics'; data: MetricsMessage }
-  | { type: 'error'; data: ErrorMessage };
+  | { type: 'error'; data: ErrorMessage }
+  | { type: 'assistant_text'; data: AssistantTextMessage };
 
 @customElement('gdm-live-audio')
 export class GdmLiveAudio extends LitElement {
@@ -80,6 +87,10 @@ export class GdmLiveAudio extends LitElement {
   private ccSequenceComplete: boolean = false;
   private outboundAudioPackets = 0;
   private inboundAudioPackets = 0;
+
+  private scheduledSubtitles: { text: string; segmentIndex: number; startTime: number; endTime: number; shown: boolean }[] = [];
+  private currentDisplayedSegment: number | null = null;
+  private syncFrameId: number | null = null;
 
   private voiceSocket: VoiceWebSocket | null = null;
   private sessionId: string | null = null;
@@ -100,7 +111,8 @@ export class GdmLiveAudio extends LitElement {
   private workletLoaded = false;
   private microphonePacketCount = 0;
   private sources = new Set<AudioBufferSourceNode>();
-  private audioQueue: Uint8Array[] = [];
+  private audioQueue: { pcmData: Uint8Array; segmentIndex: number }[] = [];
+  private assistantTextMap = new Map<number, string>();
   private isUserSpeaking = false;
   private isConnecting = false;
   private activeRequestId: number | null = null;
@@ -574,6 +586,16 @@ export class GdmLiveAudio extends LitElement {
     this.ccTimeouts = [];
   }
 
+  private showAssistantStaticCC(text: string) {
+    this.clearCCTimeouts();
+
+    this.ccChunks = [text];
+    this.ccCurrentIndex = 0;
+    this.ccVisible = true;
+    this.ccExiting = false;
+    this.ccSequenceComplete = true; 
+  }
+
   private resetCC() {
     this.clearCCTimeouts();
     this.ccChunks = [];
@@ -629,19 +651,51 @@ export class GdmLiveAudio extends LitElement {
 
   private hideCCAfterDelay(delay: number = 1000) {
     const timeout = setTimeout(() => {
-      if (!this.ccSequenceComplete && this.ccVisible) {
-        this.hideCCAfterDelay(500);
-        return;
-      }
       if (!this.ccVisible) return;
       this.ccExiting = true;
       const hideTimeout = setTimeout(() => {
         this.ccVisible = false;
         this.ccExiting = false;
+        this.currentDisplayedSegment = null;
       }, 150);
       this.ccTimeouts.push(hideTimeout);
     }, delay);
     this.ccTimeouts.push(timeout);
+  }
+
+  private runCCTicker() {
+    const tick = () => {
+      this.syncFrameId = requestAnimationFrame(tick);
+      if (this.isUserSpeaking) {
+        this.scheduledSubtitles = [];
+        this.currentDisplayedSegment = null;
+        return;
+      }
+
+      if (!this.outputAudioContext) return;
+      const now = this.outputAudioContext.currentTime;
+
+      // Clean up past subtitles
+      this.scheduledSubtitles = this.scheduledSubtitles.filter(sub => now < sub.endTime + 0.3);
+
+      const activeSub = this.scheduledSubtitles.find(sub => now >= sub.startTime && now <= sub.endTime);
+
+      if (activeSub) {
+        if (this.currentDisplayedSegment !== activeSub.segmentIndex) {
+          this.showAssistantStaticCC(activeSub.text);
+          this.currentDisplayedSegment = activeSub.segmentIndex;
+        }
+      } else {
+        const hasUpcoming = this.scheduledSubtitles.some(sub => sub.startTime > now && sub.startTime - now < 0.2);
+        if (!hasUpcoming && this.ccVisible && !this.ccExiting && this.currentDisplayedSegment !== null) {
+          this.currentDisplayedSegment = null;
+          this.hideCCAfterDelay(200);
+        }
+      }
+    };
+    if (!this.syncFrameId) {
+      this.syncFrameId = requestAnimationFrame(tick);
+    }
   }
 
   private async connectWebSocket(): Promise<void> {
@@ -772,6 +826,9 @@ export class GdmLiveAudio extends LitElement {
       case 'error':
         this.updateError(message.data.error);
         break;
+      case 'assistant_text':
+        this.handleAssistantText(message.data);
+        break;
       default:
         this.warnLog('[VoiceAI] Unknown message type:', (message as { type: string }).type);
     }
@@ -880,7 +937,7 @@ export class GdmLiveAudio extends LitElement {
         }
       }
 
-      this.audioQueue.push(pcmData);
+      this.audioQueue.push({ pcmData, segmentIndex: data.segmentIndex });
       this.inboundAudioPackets += 1;
       this.debugLog('audio_chunk_in', {
         requestId: data.requestId,
@@ -900,6 +957,7 @@ export class GdmLiveAudio extends LitElement {
     
     if (data.vadSignal === 'START_SPEECH') {
       this.isUserSpeaking = true;
+      this.scheduledSubtitles = [];
       // Mark active request as dropped on VAD start
       if (this.activeRequestId) {
         this.droppedRequestIds.add(this.activeRequestId);
@@ -907,6 +965,7 @@ export class GdmLiveAudio extends LitElement {
       this.activeRequestId = null;
       this.stopCurrentAudio();
       this.audioQueue = [];
+      this.assistantTextMap.clear();
       this.nextStartTime = this.outputAudioContext.currentTime;
       this.resetCC();
     } else if (data.vadSignal === 'END_SPEECH') {
@@ -942,7 +1001,11 @@ export class GdmLiveAudio extends LitElement {
       if (this.activeRequestId) {
         this.droppedRequestIds.delete(this.activeRequestId);
       }
-      this.hideCCAfterDelay(1000);
+      
+      const isAudioPending = this.audioQueue.length > 0 || this.sources.size > 0;
+      if (!isAudioPending) {
+        this.hideCCAfterDelay(1000);
+      }
       return;
     }
 
@@ -1050,6 +1113,11 @@ export class GdmLiveAudio extends LitElement {
     this.greetingSource = null;
   }
 
+  private handleAssistantText(data: AssistantTextMessage) {
+    if (this.isUserSpeaking) return;
+    this.assistantTextMap.set(data.segmentIndex, data.text);
+  }
+
   private async processAudioQueue() {
     if (this.audioQueue.length === 0) return;
 
@@ -1059,14 +1127,15 @@ export class GdmLiveAudio extends LitElement {
     }
 
     while (this.audioQueue.length > 0) {
-      const audioChunk = this.audioQueue.shift();
-      if (!audioChunk) continue;
+      const audioDataObj = this.audioQueue.shift();
+      if (!audioDataObj) continue;
+      const { pcmData: audioDataOuter, segmentIndex } = audioDataObj;
 
-      const evenByteLength = audioChunk.byteLength - (audioChunk.byteLength % 2);
+      const evenByteLength = audioDataOuter.byteLength - (audioDataOuter.byteLength % 2);
       if (evenByteLength <= 0) continue;
       const audioData = new Int16Array(
-        audioChunk.buffer,
-        audioChunk.byteOffset,
+        audioDataOuter.buffer,
+        audioDataOuter.byteOffset,
         evenByteLength / 2
       );
 
@@ -1086,6 +1155,24 @@ export class GdmLiveAudio extends LitElement {
       source.addEventListener('ended', () => {
         this.sources.delete(source);
       });
+
+      // Update subtitle scheduling array accurately
+      const textToDisplay = this.assistantTextMap.get(segmentIndex);
+      if (textToDisplay) {
+        this.scheduledSubtitles.push({
+          text: textToDisplay,
+          segmentIndex,
+          startTime: this.nextStartTime,
+          endTime: this.nextStartTime + buffer.duration,
+          shown: false
+        });
+        this.assistantTextMap.delete(segmentIndex);
+      } else {
+        const existingSub = this.scheduledSubtitles.find(s => s.segmentIndex === segmentIndex);
+        if (existingSub) {
+          existingSub.endTime = this.nextStartTime + buffer.duration;
+        }
+      }
 
       source.start(this.nextStartTime);
       this.nextStartTime = this.nextStartTime + buffer.duration;
@@ -1273,6 +1360,8 @@ export class GdmLiveAudio extends LitElement {
     
     this.stopCurrentAudio();
     this.audioQueue = [];
+    this.assistantTextMap.clear();
+    this.scheduledSubtitles = [];
     this.nextStartTime = 0;
     this.isUserSpeaking = false;
     this.sessionId = null;
@@ -1291,6 +1380,7 @@ export class GdmLiveAudio extends LitElement {
     
     this.stopCurrentAudio();
     this.audioQueue = [];
+    this.assistantTextMap.clear();
 
     this.resetCC();
     this.updateStatus('Paused. Session remains active.');
@@ -1320,6 +1410,7 @@ export class GdmLiveAudio extends LitElement {
 
   protected async firstUpdated() {
     this.initAudio();
+    this.runCCTicker();
 
     this.addEventListener('settings-save', ((e: Event) => {
       const event = e as CustomEvent<AgentSettings>;
@@ -1380,6 +1471,11 @@ export class GdmLiveAudio extends LitElement {
   }
 
   disconnectedCallback() {
+    if (this.syncFrameId) {
+      cancelAnimationFrame(this.syncFrameId);
+      this.syncFrameId = null;
+    }
+
     if (this.voiceSocket) {
       this.voiceSocket.disconnect();
       this.voiceSocket = null;
@@ -1393,6 +1489,8 @@ export class GdmLiveAudio extends LitElement {
 
     this.stopCurrentAudio();
     this.audioQueue = [];
+    this.assistantTextMap.clear();
+    this.scheduledSubtitles = [];
     this.resetCC();
     this.isConnecting = false;
     this.sessionId = null;
