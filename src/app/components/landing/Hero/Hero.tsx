@@ -7,9 +7,11 @@ interface HeroProps {
   revealClass?: string;
   onReveal?: (node: HTMLElement | null) => void;
   children?: React.ReactNode;
+  heroLossText?: string;
+  languageSupportText?: string;
 }
 
-export default function Hero({ revealClass, children }: HeroProps) {
+export default function Hero({ revealClass, children, heroLossText = '₹50,000+', languageSupportText = 'Hindi, English, Gujarati' }: HeroProps) {
   return (
     <header className={s.hero}>
       {/* Left Column: Content */}
@@ -18,7 +20,7 @@ export default function Hero({ revealClass, children }: HeroProps) {
         
         <h1 className={s.heroTitle}>
           Stop Losing<br />
-          <span className={s.textAccent}>₹50,000+</span><br />
+          <span className={s.textAccent}>{heroLossText}</span><br />
           To Missed Calls.
         </h1>
         
@@ -52,7 +54,7 @@ export default function Hero({ revealClass, children }: HeroProps) {
           </span>
           <span className={s.trustItem}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="12" height="12"><path d="M9 12l2 2 4-4" /></svg>
-            Hindi, English, Gujarati
+            {languageSupportText}
           </span>
         </div>
       </div>

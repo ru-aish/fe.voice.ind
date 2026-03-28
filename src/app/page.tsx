@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import s from './styles.module.css';
 import Hero from './components/landing/Hero/Hero';
 
@@ -19,7 +19,9 @@ const TESTIMONIALS = [
   { name: 'Amit Verma', role: 'Founder, QuickServ', quote: '90% faster response. Best investment this year.', metric: '90%' },
 ];
 
-const FAQS = [
+type FaqItem = { q: string; a?: string; key?: 'pricing' };
+
+const FAQS: FaqItem[] = [
   { q: 'Can it handle angry customers?', a: 'Yes. The AI is trained to detect sentiment. If a caller seems frustrated or angry, it instantly de-escalates or routes the call to a human supervisor while flagging it as urgent.' },
   { q: 'Does it sound robotic?', a: 'Not at all. We use advanced voice synthesis that includes natural pauses, "umms," and breathiness. In blind tests, 92% of callers did not realize they were speaking to an AI.' },
   { q: 'What if the AI makes a mistake?', a: 'You have full control. Every call is transcribed and recorded. You can set strict guardrails for what the AI can and cannot say. If it\'s unsure, it\'s programmed to ask for clarification or transfer the call.' },
@@ -27,7 +29,7 @@ const FAQS = [
   { q: 'Is my data secure?', a: 'Absolutely. We use enterprise-grade encryption (AES-256) for all data. We are GDPR compliant and your customer data is never shared or used to train public models without consent.' },
   { q: 'Can I customize the script?', a: 'Yes. You can provide your own scripts, FAQs, and business rules. The AI adapts to your specific brand tone—whether professional, friendly, or casual.' },
   { q: 'How long does setup take?', a: 'Most businesses are fully operational within 48 hours. We handle the technical integration, train the AI on your specific services and policies, and provide a dedicated success manager.' },
-  { q: 'What\'s the pricing structure?', a: 'Pricing ranges from ₹5,000 to ₹30,000 per month based on your call volume and features required. Most small and mid-size businesses fall in the ₹8,000-₹15,000 range. All plans include unlimited calls and dedicated support.' },
+  { q: 'What\'s the pricing structure?', key: 'pricing' },
 ];
 
 const PRICING_FEATURES = [
@@ -42,12 +44,18 @@ const PRICING_FEATURES = [
 const IMPACT_POINTS = [
   { stat: '85%', text: 'of callers won\'t leave a voicemail — they call your competitor instead.' },
   { stat: '3x', text: 'more leads lost after-hours when no one picks up the phone.' },
-  { stat: '₹20L+', text: 'average annual revenue lost from just 3 missed calls per day.' },
 ];
 
-// ─── INR Formatter ───────────────────────────────────────────
-const inrFormat = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
-const numFormat = new Intl.NumberFormat('en-IN');
+type Region = 'IN' | 'UK' | 'INTL';
+
+const REGION_CONFIG: Record<Region, { locale: string; currency: string; inrRate: number; uplift: number }> = {
+  IN: { locale: 'en-IN', currency: 'INR', inrRate: 1, uplift: 1 },
+  UK: { locale: 'en-GB', currency: 'GBP', inrRate: 0.0092, uplift: 1.25 },
+  INTL: { locale: 'en-US', currency: 'USD', inrRate: 0.012, uplift: 1.2 },
+};
+
+const convertInr = (amountInr: number, region: Region) =>
+  Math.round(amountInr * REGION_CONFIG[region].inrRate * REGION_CONFIG[region].uplift);
 
 // ─── Component ───────────────────────────────────────────────
 export default function HomePage() {
@@ -56,16 +64,24 @@ export default function HomePage() {
     window.scrollTo(0, 0);
   }, []);
 
+  const [region, setRegion] = useState<Region>('IN');
+  const regionConfig = REGION_CONFIG[region];
+  const moneyFormat = useMemo(
+    () => new Intl.NumberFormat(regionConfig.locale, { style: 'currency', currency: regionConfig.currency, maximumFractionDigits: 0 }),
+    [regionConfig.locale, regionConfig.currency]
+  );
+  const numFormat = useMemo(() => new Intl.NumberFormat(regionConfig.locale), [regionConfig.locale]);
+
   // Cursor state
   const cursorDotRef = useRef<HTMLDivElement>(null);
   const cursorOutlineRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef<HTMLDivElement>(null);
   const [cursorHover, setCursorHover] = useState(false);
 
-  // Calculator state - defaults: 10 calls, 20% miss rate, ₹2,000 value
+  // Calculator state
   const [calls, setCalls] = useState(10);
   const [missRate, setMissRate] = useState(20);
-  const [dealValue, setDealValue] = useState(2000);
+  const [dealValue, setDealValue] = useState(convertInr(2000, region));
 
   // FAQ state
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
@@ -160,6 +176,74 @@ export default function HomePage() {
     };
   }, []);
 
+  // Detect visitor country for currency localization.
+  useEffect(() => {
+    let cancelled = false;
+
+    const detectRegion = async () => {
+      try {
+        const response = await fetch('https://ipapi.co/json/');
+        if (!response.ok) throw new Error('geo lookup failed');
+
+        const data = await response.json();
+        const country = String(data?.country_code || '').toUpperCase();
+        if (cancelled) return;
+
+        if (country === 'IN') {
+          setRegion('IN');
+          return;
+        }
+        if (country === 'GB' || country === 'UK') {
+          setRegion('UK');
+          return;
+        }
+        setRegion('INTL');
+      } catch {
+        const locale = Intl.DateTimeFormat().resolvedOptions().locale.toUpperCase();
+        if (locale.includes('-IN')) {
+          setRegion('IN');
+          return;
+        }
+        if (locale.includes('-GB')) {
+          setRegion('UK');
+          return;
+        }
+        setRegion('INTL');
+      }
+    };
+
+    detectRegion();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    setDealValue(convertInr(2000, region));
+  }, [region]);
+
+  const pricingMin = convertInr(5000, region);
+  const pricingMax = convertInr(30000, region);
+  const commonMin = convertInr(8000, region);
+  const commonMax = convertInr(15000, region);
+  const consultationFee = convertInr(1500, region);
+  const frontDeskCost = convertInr(420000, region);
+  const noShowCost = convertInr(210000, region);
+  const afterHoursCost = convertInr(280000, region);
+  const avgAnnualLoss = convertInr(2000000, region);
+  const minDealValue = convertInr(500, region);
+  const maxDealValue = convertInr(10000, region);
+  const dealValueStep = Math.max(1, convertInr(500, region));
+  const pricingFaqAnswer = `Pricing ranges from ${moneyFormat.format(pricingMin)} to ${moneyFormat.format(pricingMax)} per month based on your call volume and features required. Most small and mid-size businesses fall in the ${moneyFormat.format(commonMin)}-${moneyFormat.format(commonMax)} range. All plans include unlimited calls and dedicated support.`;
+  const impactPoints = [
+    ...IMPACT_POINTS,
+    { stat: `${moneyFormat.format(avgAnnualLoss)}+`, text: 'average annual revenue lost from just 3 missed calls per day.' },
+  ];
+  const heroLossText = `${moneyFormat.format(convertInr(50000, region))}+`;
+  const languageSupportText = region === 'IN' ? 'Hindi, English, Gujarati' : 'English, Spanish, French';
+  const marqueeCtaText = region === 'IN' ? 'Ready to Try? Abhi Baat Karo' : 'Ready to Try? Talk Now';
+  const priyaMetricText = `${moneyFormat.format(convertInr(800000, region))}/mo`;
+
   // Calculator derived value
   const annualLoss = Math.round(calls * (missRate / 100) * dealValue * 365);
 
@@ -188,7 +272,7 @@ export default function HomePage() {
         </nav>
 
         {/* ─── HERO with Calculator on the right ────────────────── */}
-        <Hero revealClass={s.reveal}>
+        <Hero revealClass={s.reveal} heroLossText={heroLossText} languageSupportText={languageSupportText}>
           <div className={s.calcBox}>
             <h4 className={s.calcBoxTitle}>Your Business&apos;s Lost Revenue</h4>
             <div className={s.sliderGroup} data-hover>
@@ -226,14 +310,14 @@ export default function HomePage() {
 
             <div className={s.sliderGroup} data-hover>
               <div className={s.sliderHeader}>
-                <span>Avg. Value per Lead (₹)</span>
+                <span>Avg. Value per Lead ({regionConfig.currency})</span>
                 <span className={s.sliderValue}>{numFormat.format(dealValue)}</span>
               </div>
               <input
                 type="range"
-                min={500}
-                max={10000}
-                step={500}
+                min={minDealValue}
+                max={maxDealValue}
+                step={dealValueStep}
                 value={dealValue}
                 onChange={(e) => setDealValue(parseInt(e.target.value, 10))}
                 className={s.slider}
@@ -243,14 +327,14 @@ export default function HomePage() {
 
             <div className={s.resultBox}>
               <div className={s.resultLabel}>Revenue Lost Annually</div>
-              <div className={s.resultNumber}>{inrFormat.format(annualLoss)}</div>
+              <div className={s.resultNumber}>{moneyFormat.format(annualLoss)}</div>
             </div>
 
             {/* Monthly insight box */}
             <div className={s.calcInsightBox}>
               <span className={s.calcInsightIcon}>!</span>
               <p className={s.calcInsightText}>
-                That&apos;s <strong className={s.textAccent}>₹{numFormat.format(Math.round(annualLoss / 12))}</strong> lost every month
+                That&apos;s <strong className={s.textAccent}>{moneyFormat.format(Math.round(annualLoss / 12))}</strong> lost every month
               </p>
             </div>
 
@@ -260,15 +344,15 @@ export default function HomePage() {
               <div className={s.hiddenCostsGrid}>
                 <div className={s.hiddenCostItem}>
                   <span className={s.hiddenCostLabel}>Front Desk</span>
-                  <span className={s.hiddenCostValue}>₹4.2L</span>
+                  <span className={s.hiddenCostValue}>{moneyFormat.format(frontDeskCost)}</span>
                 </div>
                 <div className={s.hiddenCostItem}>
                   <span className={s.hiddenCostLabel}>No-Shows</span>
-                  <span className={s.hiddenCostValue}>₹2.1L</span>
+                  <span className={s.hiddenCostValue}>{moneyFormat.format(noShowCost)}</span>
                 </div>
                 <div className={s.hiddenCostItem}>
                   <span className={s.hiddenCostLabel}>After-Hours</span>
-                  <span className={s.hiddenCostValue}>₹2.8L</span>
+                  <span className={s.hiddenCostValue}>{moneyFormat.format(afterHoursCost)}</span>
                 </div>
               </div>
             </div>
@@ -290,7 +374,7 @@ export default function HomePage() {
               
               {/* Impact Points */}
               <div className={s.impactList}>
-                {IMPACT_POINTS.map((point, i) => (
+                {impactPoints.map((point, i) => (
                   <div key={i} className={s.impactItem}>
                     <span className={s.impactStat}>{point.stat}</span>
                     <p className={s.impactText}>{point.text}</p>
@@ -338,7 +422,7 @@ export default function HomePage() {
                   <div className={`${s.messageRow} ${s.messageLeft}`}>
                     <div className={s.messageBubble}>
                       <span className={s.msgTagAI}>[AI]</span>
-                      <span>&quot;Our consultation fee is ₹1,500. Shall I confirm the slot?&quot;</span>
+                      <span>&quot;Our consultation fee is {moneyFormat.format(consultationFee)}. Shall I confirm the slot?&quot;</span>
                       <span className={s.msgLatency}>410ms</span>
                     </div>
                   </div>
@@ -438,7 +522,7 @@ export default function HomePage() {
                 style={{ transitionDelay: `${i * 0.08}s` }}
                 data-hover
               >
-                <div className={s.testimonialMetric}>{t.metric}</div>
+                <div className={s.testimonialMetric}>{t.name === 'Priya Sharma' ? priyaMetricText : t.metric}</div>
                 <p className={s.testimonialQuote}>&quot;{t.quote}&quot;</p>
                 <div className={s.testimonialAuthor}>
                   <p className={s.testimonialName}>{t.name}</p>
@@ -458,9 +542,9 @@ export default function HomePage() {
           <div className={`${s.pricingCard} ${s.reveal}`}>
             <div className={s.pricingLabel}>Estimated Monthly</div>
             <div className={s.pricingRange}>
-              <span className={s.pricingValue}>₹5,000</span>
+              <span className={s.pricingValue}>{moneyFormat.format(pricingMin)}</span>
               <span className={s.pricingDash}>—</span>
-              <span className={s.pricingValue}>₹30,000</span>
+              <span className={s.pricingValue}>{moneyFormat.format(pricingMax)}</span>
             </div>
             <p className={s.pricingNote}>Based on call volume and features required</p>
             <div className={s.pricingContext}>
@@ -468,7 +552,7 @@ export default function HomePage() {
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 16v-4M12 8h.01" />
               </svg>
-              <span>Most small &amp; mid-size businesses fall in the <strong>₹8,000 — ₹15,000</strong> range</span>
+              <span>Most small &amp; mid-size businesses fall in the <strong>{moneyFormat.format(commonMin)} — {moneyFormat.format(commonMax)}</strong> range</span>
             </div>
             <div className={s.pricingFeatures}>
               {PRICING_FEATURES.map((feat) => (
@@ -509,7 +593,7 @@ export default function HomePage() {
                   </button>
                   {isOpen && (
                     <div id={panelId} role="region" aria-labelledby={triggerId} className={s.faqAnswer}>
-                      {faq.a}
+                      {faq.key === 'pricing' ? pricingFaqAnswer : faq.a}
                     </div>
                   )}
                 </div>
@@ -544,10 +628,10 @@ export default function HomePage() {
       <a href="/demo" className={s.ctaLink} aria-label="Try the demo">
         <section className={s.ctaSection} data-hover>
           <div className={s.marqueeContent}>
-            <span>Ready to Try? Abhi Baat Karo &#10022;</span>
-            <span>Ready to Try? Abhi Baat Karo &#10022;</span>
-            <span>Ready to Try? Abhi Baat Karo &#10022;</span>
-            <span>Ready to Try? Abhi Baat Karo &#10022;</span>
+            <span>{marqueeCtaText} &#10022;</span>
+            <span>{marqueeCtaText} &#10022;</span>
+            <span>{marqueeCtaText} &#10022;</span>
+            <span>{marqueeCtaText} &#10022;</span>
           </div>
         </section>
       </a>
